@@ -9,6 +9,10 @@ const genreSchema = new mongoose.Schema({
     description: {
         type: String
     },
+    slugify: {
+        type: String,
+        unique: true
+    },
     songs: [{
         type: mongoose.Types.ObjectId,
         ref: 'Song'
