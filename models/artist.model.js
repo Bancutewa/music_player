@@ -10,19 +10,19 @@ const artistSchema = new mongoose.Schema({
         type: String
     },
     avatar: {
-        type: String // URL ảnh nghệ sĩ
+        type: String
     },
     genres: [{
         type: mongoose.Types.ObjectId,
-        ref: 'Genre' // Liên kết với thể loại nhạc
+        ref: 'Genre'
     }],
     albums: [{
         type: mongoose.Types.ObjectId,
-        ref: 'Album' // Liên kết với album
+        ref: 'Album'
     }],
     songs: [{
         type: mongoose.Types.ObjectId,
-        ref: 'Song' // Liên kết với bài hát
+        ref: 'Song'
     }]
 }, { timestamps: true });
 

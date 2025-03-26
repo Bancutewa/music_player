@@ -7,24 +7,25 @@ const albumSchema = new mongoose.Schema({
     },
     artist: {
         type: mongoose.Types.ObjectId,
-        ref: 'Artist', // Liên kết với nghệ sĩ
-        required: true
+        ref: 'Artist',
+        // required: true
+    },
+    slugify: {
+        type: String,
+        unique: true
     },
     genre: {
         type: mongoose.Types.ObjectId,
-        ref: 'Genre', // Liên kết với thể loại nhạc
-        required: true
+        ref: 'Genre',
+        // required: true
     },
-    releaseDate: {
-        type: Date,
-        required: true
-    },
-    coverImage: {
-        type: String // URL ảnh album
+
+    coverImageURL: {
+        type: String
     },
     songs: [{
         type: mongoose.Types.ObjectId,
-        ref: 'Song' // Danh sách bài hát trong album
+        ref: 'Song'
     }]
 }, { timestamps: true });
 
