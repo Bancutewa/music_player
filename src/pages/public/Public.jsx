@@ -10,8 +10,6 @@ const Public = () => {
       <div className="flex flex-1">
         {/* Sidebar nằm bên trái, chiếm cố định 16rem (64px * 4) */}
         <Sidebar className="w-64" />
-
-        {/* Phần nội dung chính */}
         <div className="flex-1 p-4 overflow-auto">
           <Outlet />
         </div>

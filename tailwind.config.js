@@ -1,78 +1,46 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    "./src/**/*.{html,js}",
-    "./public/index.html",
+    './index.html',
+    './src/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
     extend: {
-      width: {
-        main: '1220px',
-      },
-      backgroundColor: {
-        main: '#ee3131',
-        overlay: 'rgba(0,0,0,0.3)',
-      },
       colors: {
-        main: '#ee3131',
-      },
-      flex: {
-        '2': '2 2 0%',
-        '3': '3 3 0%',
-        '4': '4 4 0%',
-        '5': '5 5 0%',
-        '6': '6 6 0%',
-        '7': '7 7 0%',
-        '8': '8 8 0%'
+        'sidebar': '#373f45',
+        'sidebar-hover': '#2c3135',
+        'main-bg': '#f5f8f8',
+        'cyan': '#58bec2',
+        'coral': '#c89385',
+        'chart-blue': '#58bec2',
+        'chart-coral': '#c89385',
+        'amber': '#ca9d5a',
+        'cream': '#e2c89d',
+        'gray-blue': '#c2cacf',
+        'nav-blue': '#3dabb4',
+        'header-bg': '#354149',
       },
       fontFamily: {
-        main: ['Poppins', 'sans-serif'],
+        'sans': ['Roboto', 'sans-serif'],
       },
-      listStyleType: {
-        square: 'square',
-        roman: 'upper-roman',
+      fontSize: {
+        xs: '0.75rem',
+        sm: '0.875rem',
+        base: '1rem',
+        lg: '1.125rem',
+        xl: '1.25rem',
+        '2xl': '1.5rem',
+        '3xl': '1.875rem',
+        '4xl': '2.25rem',
+        '5xl': '3rem',
       },
-      keyframes: {
-        'slide-top': {
-          "0%": {
-            "-webkit-transform": "translateY(20px);",
-            "transform": "translateY(20px);"
-          },
-          "100%": {
-            "-webkit-transform": "translateY(0px);",
-            transform: "translateY(0px);"
-          }
-        },
-        'slide-top-sm': {
-          "0%": {
-            "-webkit-transform": "translateY(8px);",
-            "transform": "translateY(8px);"
-          },
-          "100%": {
-            "-webkit-transform": "translateY(0px);",
-            transform: "translateY(0px);"
-          }
-        },
-        'slide-right': {
-          "0%": {
-            '-webkit-transform': 'translateX(-1000px);',
-            transform: 'translateX(-1000px);'
-          },
-          '100%': {
-            '-webkit-transform': 'translateX(0);',
-            transform: 'translateX(0);'
-          }
-        }
+      boxShadow: {
+        'card': '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)',
       },
-      animation: {
-        'slide-top': 'slide-top 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;',
-        'slide-top-sm': 'slide-top-sm 0.2s linear both;',
-        'slide-right': 'slide-right 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;'
-      }
     },
   },
   plugins: [
-    require('@tailwindcss/line-clamp'),
-    require('@tailwindcss/forms')
+    require('tailwindcss-animate'),
+    require('tailwindcss-line-clamp')
   ],
-}
+};
