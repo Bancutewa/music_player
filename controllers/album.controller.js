@@ -2,18 +2,23 @@ const asyncHandler = require("express-async-handler")
 const slugify = require('slugify')
 const Album = require("../models/album.model")
 
-const createAlbum = asyncHandler(async (req, res) => {
-    if (Object.keys(req.body).length === 0) throw new Error("Missing input")
-    if (!req.file) throw new Error("Missing Images File");
-    if (req.body && req.body.title) req.body.slugify = slugify(req.body.title)
-    req.body.coverImageURL = req.file.path;
-    const newAlbum = await Album.create(req.body)
+
+const createAndUploadAlbum = asyncHandler(async (req, res) => {
+    if (!req.body.title) throw new Error("Missing title");
+    if (!req.files || !req.files.album) throw new Error("Missing album file");
+
+    const slug = slugify(req.body.title, { lower: true, strict: true });
+    req.body.slugify = slug;
+
+    req.body.coverImageURL = req.files.album[0].path;
+
+    const newAlbum = await Album.create(req.body);
+
     return res.status(201).json({
         success: newAlbum ? true : false,
-        data: newAlbum ? newAlbum : 'Cannot create album'
-    })
-})
-
+        data: newAlbum ? newAlbum : 'Cannot create and upload Album',
+    });
+});
 const getAlbums = asyncHandler(async (req, res) => {
     const albums = await Album.find()
     return res.status(200).json({
@@ -74,7 +79,7 @@ const addGenreToAlbum = asyncHandler(async (req, res) => {
     })
 })
 module.exports = {
-    createAlbum,
+    createAndUploadAlbum,
     getAlbums,
     getAlbumById,
     updateAlbum,

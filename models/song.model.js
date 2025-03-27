@@ -14,11 +14,13 @@ const songSchema = new mongoose.Schema({
         type: mongoose.Types.ObjectId,
         ref: 'Album' // Liên kết với album
     },
-    genre: {
-        type: mongoose.Types.ObjectId,
-        ref: 'Genre', // Liên kết với thể loại nhạc
-        // required: true
-    },
+    genre: [
+        {
+            type: mongoose.Types.ObjectId,
+            ref: 'Genre', // Liên kết với thể loại nhạc
+            // required: true
+        }
+    ],
     duration: {
         type: String, // Lưu định dạng "mm:ss"
         // required: true

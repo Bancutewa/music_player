@@ -2,52 +2,55 @@ const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const multer = require('multer');
 const Song = require('../models/song.model');
-const { default: slugify } = require('slugify');
 const Album = require('../models/album.model');
+const slugify = require('slugify');
 
 // Cấu hình Cloudinary
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_NAME,
     api_key: process.env.CLOUDINARY_KEY,
-    api_secret: process.env.CLOUDINARY_SECRET
+    api_secret: process.env.CLOUDINARY_SECRET,
 });
 
-
-const songStorage = new CloudinaryStorage({
+// Cấu hình CloudinaryStorage
+const storage = new CloudinaryStorage({
     cloudinary,
     params: async (req, file) => {
-        const song = await Song.findById(req.params.sid);
-        const title = req.body.title || song?.title;
+        const title = req.body.title;
         if (!title) throw new Error("Missing title");
+        const slug = slugify(title, { lower: true, strict: true });
+        let folder, resource_type;
 
-        const fileName = slugify(title, { lower: true, strict: true });
+        switch (file.fieldname) {
+            case 'song':
+                folder = 'music_player/songs';
+                resource_type = 'auto'; // Audio file
+                break;
+            case 'cover':
+                folder = 'music_player/covers';
+                resource_type = 'image'; // Image file
+                break;
+            case 'album':
+                folder = 'music_player/albums';
+                resource_type = 'image'; // Image file
+                break;
+            default:
+                throw new Error('Invalid file field');
+        }
+
         return {
-            folder: 'music_player/songs',
-            public_id: fileName,
-            resource_type: 'auto',
+            folder,
+            public_id: slug,
+            resource_type,
         };
     },
 });
 
-
-const albumStorage = new CloudinaryStorage({
-    cloudinary,
-    params: async (req, file) => {
-        const album = await Album.findById(req.params.aid);
-        const title = req.body.title || album?.title;
-        if (!title) throw new Error("Missing title");
-
-        const fileName = slugify(title, { lower: true, strict: true });
-        return {
-            folder: 'music_player/albums',
-            public_id: fileName,
-            resource_type: 'auto',
-        };
-    }
-});
-
 // Middleware upload
-const uploadSong = multer({ storage: songStorage });
-const uploadAlbum = multer({ storage: albumStorage });
+const uploadFiles = multer({ storage }).fields([
+    { name: 'song', maxCount: 1 },
+    { name: 'cover', maxCount: 1 },
+    { name: 'album', maxCount: 1 },
+]);
 
-module.exports = { uploadSong, uploadAlbum };
+module.exports = { uploadFiles };
