@@ -5,9 +5,9 @@ const { verifyAccessToken, isAdmin } = require("../middlewares/verifyToken.middl
 
 songRouter.post("/", uploadFiles, songController.createAndUploadSong);
 songRouter.get(("/"), songController.getAllSongs)
+songRouter.put(("/:sid"), uploadFiles, songController.updateSong)
 
-songRouter.put(("/uploadSong/:sid"), uploadFiles, songController.uploadMusic)
-songRouter.put(("/:sid"), songController.updateSong)
+// songRouter.put(("/uploadSong/:sid"), uploadFiles, songController.uploadMusic)
 songRouter.delete("/:sid", songController.deleteSong)
 
 songRouter.get("/:sid", songController.getSong)

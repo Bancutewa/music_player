@@ -85,7 +85,6 @@ const createAndUploadSong = asyncHandler(async (req, res) => {
         req.body.coverImage = req.files.cover[0].path;
     }
 
-    // Tạo document Song
     const newSong = await Song.create(req.body);
 
     return res.status(201).json({
@@ -97,8 +96,6 @@ const createAndUploadSong = asyncHandler(async (req, res) => {
 
 const uploadMusic = asyncHandler(async (req, res) => {
     const { sid } = req.params;
-    console.log(sid);
-
     if (!req.file) throw new Error("Missing file");
     const song = await Song.findById(sid);
     const fileUrl = req.file.path;

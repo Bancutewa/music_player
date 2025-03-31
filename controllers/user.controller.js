@@ -99,6 +99,7 @@ const getCurrent = asyncHandler(async (req, res) => {
     })
 
 })
+
 const deleteUser = asyncHandler(async (req, res) => {
     const { _id } = req.query
     if (!_id) throw new Error("Missing input")
@@ -108,6 +109,7 @@ const deleteUser = asyncHandler(async (req, res) => {
         deleteUser: response ? `User with email ${response.email} deleted` : `Delete user ${response.email} fail`
     })
 })
+
 const updateUser = asyncHandler(async (req, res) => {
     const { _id } = req.user
     if (!_id || Object.keys(req.body).length === 0) throw new Error("Missing input")
@@ -117,6 +119,7 @@ const updateUser = asyncHandler(async (req, res) => {
         updateUser: response ? response : `update user ${response.email} fail`
     })
 })
+
 const updateUserByAdmin = asyncHandler(async (req, res) => {
     const { uid } = req.params
     if (Object.keys(req.body).length === 0) throw new Error("Missing input")
