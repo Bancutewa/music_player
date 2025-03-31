@@ -5,22 +5,23 @@ const SongAdd = () => {
   const [songData, setSongData] = useState({
     title: "",
     song: null,
+    cover: null,
     genre: "",
   });
   const [genres, setGenres] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const fetchGenres = async () => {
-      try {
-        const response = await apiGetAllGenres();
-        if (response?.success) {
-          setGenres(response.data);
-        }
-      } catch (error) {
-        console.error("Error fetching genres:", error);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const fetchGenres = async () => {
+    try {
+      const response = await apiGetAllGenres();
+      if (response?.success) {
+        setGenres(response.data);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching genres:", error);
+    }
+  };
+  useEffect(() => {
     fetchGenres();
   }, []);
 
@@ -37,20 +38,32 @@ const SongAdd = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setUploadProgress(0);
 
     const formData = new FormData();
     formData.append("title", songData.title);
     formData.append("song", songData.song);
+    if (songData.cover) formData.append("cover", songData.cover);
     formData.append("genre", songData.genre);
 
     try {
-      console.log("Uploading song...");
-      const response = await apiCreateSong(formData);
-      console.log("API Response:", response);
-
+      const response = await apiCreateSong(formData, {
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          setUploadProgress(percentCompleted);
+        },
+      });
       if (response?.success) {
         alert("Song created successfully!");
-        setSongData({ title: "", song: null, genre: "" });
+        setSongData({
+          title: "",
+          song: null,
+          cover: null,
+          genre: "",
+        });
+        setUploadProgress(0);
       } else {
         alert("Failed to create song.");
       }
@@ -77,6 +90,7 @@ const SongAdd = () => {
             value={songData.title}
             onChange={handleChange}
             className="w-full border border-gray-300 rounded p-2"
+            disabled={loading}
           />
         </div>
 
@@ -88,6 +102,7 @@ const SongAdd = () => {
             value={songData.genre}
             onChange={handleChange}
             className="w-full border border-gray-300 rounded p-2"
+            disabled={loading}
           >
             <option value="">Select Genre</option>
             {genres.map((g) => (
@@ -106,8 +121,51 @@ const SongAdd = () => {
             name="song"
             onChange={handleFileChange}
             className="w-full border border-gray-300 rounded p-2"
+            accept="audio/*" // Chỉ chấp nhận file âm thanh
+            disabled={loading}
           />
+          {songData.song && (
+            <p className="text-sm text-gray-500 mt-1">
+              {songData.song.name}
+            </p>
+          )}
         </div>
+
+        {/* COVER FILE */}
+        <div className="mb-4">
+          <label className="block text-gray-700">Cover Image</label>
+          <input
+            type="file"
+            name="cover"
+            onChange={handleFileChange}
+            className="w-full border border-gray-300 rounded p-2"
+            accept="image/*" // Chỉ chấp nhận file hình ảnh
+            disabled={loading}
+          />
+          {songData.cover && (
+            <p className="text-sm text-gray-500 mt-1">
+              {songData.cover.name}
+            </p>
+          )}
+        </div>
+
+        {/* UPLOAD PROGRESS */}
+        {loading && (
+          <div className="mb-4">
+            <label className="block text-gray-700">
+              Upload Progress
+            </label>
+            <div className="w-full bg-gray-200 rounded-full h-4">
+              <div
+                className="bg-teal-500 h-4 rounded-full"
+                style={{ width: `${uploadProgress}%` }}
+              ></div>
+            </div>
+            <p className="text-sm text-gray-600 mt-1">
+              {uploadProgress}%
+            </p>
+          </div>
+        )}
 
         {/* BUTTONS */}
         <div className="flex gap-4">
@@ -117,10 +175,11 @@ const SongAdd = () => {
             disabled={loading}
           >
             {loading ? (
-              <span className="animate-spin border-4 border-white border-t-transparent rounded-full w-5 h-5"></span>
+              <span className="animate-spin border-4 border-white border-t-transparent rounded-full w-5 h-5 mr-2"></span>
             ) : (
               "Save"
             )}
+            {loading && "Uploading..."}
           </button>
         </div>
       </form>

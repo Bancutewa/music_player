@@ -1,11 +1,16 @@
 import axios from "../axios";
 
-export const apiCreateSong = (data) => axios({
+
+export const apiCreateSong = (data, config = {}) => axios({
     url: '/song',
     method: 'POST',
     data,
-    withCredentials: true
-})
+    withCredentials: true,
+    headers: {
+        "Content-Type": "multipart/form-data",
+    },
+    ...config,
+});
 export const apiGetAllSongs = () => axios({
     url: '/song',
     method: 'GET',
