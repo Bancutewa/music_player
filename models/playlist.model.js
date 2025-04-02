@@ -5,6 +5,13 @@ const playlistSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    slugify: {
+        type: String,
+        unique: true
+    },
+    coverImageURL: {
+        type: String
+    },
     user: {
         type: mongoose.Types.ObjectId,
         ref: 'User', // Người tạo playlist
@@ -12,7 +19,7 @@ const playlistSchema = new mongoose.Schema({
     },
     songs: [{
         type: mongoose.Types.ObjectId,
-        ref: 'Song' // Danh sách bài hát trong playlist
+        ref: 'Song'
     }],
     isPublic: {
         type: Boolean,
