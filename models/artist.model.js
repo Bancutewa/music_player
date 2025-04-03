@@ -1,16 +1,17 @@
 const mongoose = require('mongoose');
 
 const artistSchema = new mongoose.Schema({
-    name: {
+    title: {
         type: String,
         required: true,
         trim: true
     },
-    bio: {
-        type: String
-    },
     avatar: {
         type: String
+    },
+    slugify: {
+        type: String,
+        unique: true
     },
     genres: [{
         type: mongoose.Types.ObjectId,

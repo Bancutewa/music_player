@@ -35,7 +35,13 @@ const login = asyncHandler(async (req, res) => {
         })
 
     const response = await User.findOne({ email })
-
+    if (!response) {
+        throw new Error("This email does not exist")
+    }
+    const isCorrectPassword = await response.isCorrectPassword(password)
+    if (!isCorrectPassword) {
+        throw new Error("Invalid Password")
+    }
     if (email && await response.isCorrectPassword(password)) {
         const { password, role, refreshToken, ...userData } = response.toObject()
 

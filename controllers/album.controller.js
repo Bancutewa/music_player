@@ -20,34 +20,90 @@ const createAndUploadAlbum = asyncHandler(async (req, res) => {
     });
 });
 const getAlbums = asyncHandler(async (req, res) => {
-    const albums = await Album.find()
-    return res.status(200).json({
-        success: albums ? true : false,
-        data: albums
-    })
-})
+    const queries = { ...req.query };
+    const excludeFields = ['limit', 'page', 'sort', 'fields'];
+    excludeFields.forEach((field) => delete queries[field]);
+
+
+    // $gte=500
+    let queryString = JSON.stringify(queries);
+    queryString = queryString.replace(/\b(gte|gt|lt|lte)\b/g, (matchedEl) => `$${matchedEl}`);
+    const queryObject = JSON.parse(queryString);
+
+    let queryCommand = Album.find(queryObject);
+
+    if (req.query.sort) {
+        const sortBy = req.query.sort.split(',').join(' ');
+        queryCommand = queryCommand.sort(sortBy);
+    } else {
+        queryCommand = queryCommand.sort('-createdAt');
+    }
+
+    if (req.query.fields) {
+        const fields = req.query.fields.split(',').map((field) => field.trim());
+        queryCommand = queryCommand.select(fields);
+    }
+
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
+
+    if (page < 1 || limit < 1) {
+        return res.status(400).json({
+            success: false,
+            message: 'Page and limit must be positive numbers',
+        });
+    }
+
+    queryCommand = queryCommand.skip(skip).limit(limit);
+
+    try {
+        const albums = await queryCommand.exec();
+        const counts = await Album.countDocuments(queryObject);
+
+        res.status(200).json({
+            success: albums.length > 0,
+            total: albums.length,
+            counts,
+            data: albums.length > 0 ? albums : 'No albums found',
+        });
+    } catch (err) {
+        console.error("Album query error:", err);
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error',
+            message: err.message,
+        });
+    }
+});
+
 const getAlbumById = asyncHandler(async (req, res) => {
-    const { aid } = req.params
-    const album = await Album.findById(aid)
+    const { aid } = req.params;
+    const album = await Album.findById(aid);
     return res.status(200).json({
         success: album ? true : false,
-        data: album ? album : 'Cannot get album'
-    })
+        data: album ? album : 'Cannot get Album',
+    });
 })
 
 const updateAlbum = asyncHandler(async (req, res) => {
-    const { aid } = req.params
-    if (Object.keys(req.body).length === 0) throw new Error("Missing input")
-    if (req.body && req.body.title) req.body.slugify = slugify(req.body.title)
-    if (req.file) {
-        req.body.coverImageURL = req.file.path;
+    const { aid } = req.params;
+    if (Object.keys(req.body).length === 0 && (!req.files || Object.keys(req.files).length === 0)) {
+        throw new Error("Missing input");
     }
-    const updatedAlbum = await Album.findByIdAndUpdate(aid, req.body, { new: true })
+    if (req.body.title) {
+        req.body.slugify = slugify(req.body.title, { lower: true, strict: true });
+    }
+    if (req.files && req.files.album) {
+        req.body.coverImage = req.files.album[0].path;
+    }
+
+    const updatedAlbum = await Album.findByIdAndUpdate(aid, req.body, { new: true });
     return res.status(200).json({
         success: updatedAlbum ? true : false,
-        data: updatedAlbum ? updatedAlbum : 'Cannot update album'
-    })
-})
+        data: updatedAlbum ? updatedAlbum : 'Cannot update Album',
+    });
+});
 const deleteAlbum = asyncHandler(async (req, res) => {
     const { aid } = req.params
     const deletedAlbum = await Album.findByIdAndDelete(aid)

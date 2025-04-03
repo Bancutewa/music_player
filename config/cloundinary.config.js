@@ -3,6 +3,7 @@ const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const multer = require('multer');
 const Song = require('../models/song.model');
 const Album = require('../models/album.model');
+const Artist = require('../models/artist.model');
 const slugify = require('slugify');
 
 // Cấu hình Cloudinary
@@ -34,6 +35,10 @@ const storage = new CloudinaryStorage({
                 folder = 'music_player/albums';
                 resource_type = 'image'; // Image file
                 break;
+            case 'artist':
+                folder = 'music_player/artists';
+                resource_type = 'image'; // Image file
+                break;
             default:
                 throw new Error('Invalid file field');
         }
@@ -51,6 +56,8 @@ const uploadFiles = multer({ storage }).fields([
     { name: 'song', maxCount: 1 },
     { name: 'cover', maxCount: 1 },
     { name: 'album', maxCount: 1 },
+    { name: 'artist', maxCount: 1 },
+    { name: 'playlist', maxCount: 1 },
 ]);
 
 module.exports = { uploadFiles };
