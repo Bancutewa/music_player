@@ -25,7 +25,7 @@ const path = {
     // Songs paths
     SONGS_ALL: 'songs',
     SONGS_ADD: 'song-add',
-    SONGS_EDIT: 'song-edit',
+    SONGS_EDIT: 'song-edit/:id',
     SONGS_VIEW: 'song/:id',
 
     // Playlists paths

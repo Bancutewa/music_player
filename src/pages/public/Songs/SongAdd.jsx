@@ -1,50 +1,88 @@
 import React, { memo, useState, useEffect } from "react";
-import { apiCreateSong, apiGetAllGenres } from "../../../apis";
+import {
+  apiCreateSong,
+  apiGetAllGenres,
+  apiGetAllArtists,
+} from "../../../apis";
+import {
+  Form,
+  Input,
+  Select,
+  Upload,
+  Button,
+  Progress,
+  Spin,
+  Typography,
+  message,
+} from "antd";
+import { UploadOutlined } from "@ant-design/icons";
+
+const { Title } = Typography;
+const { TextArea } = Input;
 
 const SongAdd = () => {
+  const [form] = Form.useForm();
   const [songData, setSongData] = useState({
     title: "",
     song: null,
     cover: null,
-    genre: "",
+    genre: [],
+    artist: "",
+    lyrics: "",
   });
   const [genres, setGenres] = useState([]);
+  const [artists, setArtists] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  // Fetch genres
   const fetchGenres = async () => {
     try {
       const response = await apiGetAllGenres();
-      if (response?.success) {
-        setGenres(response.data);
-      }
+      if (response?.success) setGenres(response.data);
     } catch (error) {
       console.error("Error fetching genres:", error);
     }
   };
+
+  // Fetch artists
+  const fetchArtists = async () => {
+    try {
+      const response = await apiGetAllArtists();
+      if (response?.success) setArtists(response.data);
+    } catch (error) {
+      console.error("Error fetching artists:", error);
+    }
+  };
+
   useEffect(() => {
     fetchGenres();
+    fetchArtists();
   }, []);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setSongData({ ...songData, [name]: value });
-  };
+  // Handle file upload
+  const handleFileChange =
+    (name) =>
+    ({ fileList }) => {
+      setSongData({
+        ...songData,
+        [name]:
+          fileList.length > 0 ? fileList[0].originFileObj : null,
+      });
+    };
 
-  const handleFileChange = (e) => {
-    const { name, files } = e.target;
-    setSongData({ ...songData, [name]: files[0] });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Handle form submission
+  const handleSubmit = async () => {
     setLoading(true);
     setUploadProgress(0);
 
     const formData = new FormData();
     formData.append("title", songData.title);
-    formData.append("song", songData.song);
+    formData.append("artist", songData.artist);
+    formData.append("lyrics", songData.lyrics);
+    formData.append("genre", songData.genre.join(","));
+    if (songData.song) formData.append("song", songData.song);
     if (songData.cover) formData.append("cover", songData.cover);
-    formData.append("genre", songData.genre);
 
     try {
       const response = await apiCreateSong(formData, {
@@ -56,133 +94,168 @@ const SongAdd = () => {
         },
       });
       if (response?.success) {
-        alert("Song created successfully!");
+        message.success("Song created successfully!");
         setSongData({
           title: "",
           song: null,
           cover: null,
-          genre: "",
+          genre: [],
+          artist: "",
+          lyrics: "",
         });
+        form.resetFields();
         setUploadProgress(0);
       } else {
-        alert("Failed to create song.");
+        message.error("Failed to create song.");
       }
     } catch (error) {
       console.error("Error creating song:", error);
-      alert("An error occurred while uploading. Please try again.");
+      message.error(
+        "An error occurred while uploading. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="w-full max-w-lg mx-auto bg-white p-6 rounded-lg shadow-lg">
-      <h2 className="text-xl font-bold text-gray-700 mb-4">
+    <div style={{ maxWidth: 600, margin: "0 auto", padding: "24px" }}>
+      <Title
+        level={2}
+        style={{ textAlign: "center", marginBottom: "24px" }}
+      >
         Add New Song
-      </h2>
-      <form onSubmit={handleSubmit}>
-        {/* TITLE */}
-        <div className="mb-4">
-          <label className="block text-gray-700">Title</label>
-          <input
-            type="text"
-            name="title"
-            value={songData.title}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded p-2"
+      </Title>
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={handleSubmit}
+        initialValues={songData}
+        onValuesChange={(changedValues) =>
+          setSongData({ ...songData, ...changedValues })
+        }
+      >
+        {/* Title */}
+        <Form.Item
+          label="Title"
+          name="title"
+          rules={[
+            { required: true, message: "Please enter a title" },
+          ]}
+        >
+          <Input placeholder="Enter song title" disabled={loading} />
+        </Form.Item>
+
+        {/* Artist */}
+        <Form.Item
+          label="Artist"
+          name="artist"
+          rules={[
+            { required: true, message: "Please select an artist" },
+          ]}
+        >
+          <Select placeholder="Select an artist" disabled={loading}>
+            {artists.map((artist) => (
+              <Select.Option key={artist._id} value={artist._id}>
+                {artist.title}
+              </Select.Option>
+            ))}
+          </Select>
+        </Form.Item>
+
+        {/* Genres */}
+        <Form.Item
+          label="Genres"
+          name="genre"
+          rules={[
+            {
+              required: true,
+              message: "Please select at least one genre",
+            },
+          ]}
+        >
+          <Select
+            mode="multiple"
+            placeholder="Select genres"
+            disabled={loading}
+            allowClear
+          >
+            {genres.map((g) => (
+              <Select.Option key={g._id} value={g._id}>
+                {g.name}
+              </Select.Option>
+            ))}
+          </Select>
+        </Form.Item>
+
+        {/* Lyrics */}
+        <Form.Item label="Lyrics" name="lyrics">
+          <TextArea
+            rows={6}
+            placeholder="Enter song lyrics"
             disabled={loading}
           />
-        </div>
+        </Form.Item>
 
-        {/* GENRE */}
-        <div className="mb-4">
-          <label className="block text-gray-700">Genre</label>
-          <select
-            name="genre"
-            value={songData.genre}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded p-2"
+        {/* Song File */}
+        <Form.Item
+          label="Song File"
+          name="song"
+          rules={[
+            { required: true, message: "Please upload a song file" },
+          ]}
+        >
+          <Upload
+            beforeUpload={() => false} // Prevent auto-upload
+            onChange={handleFileChange("song")}
+            accept="audio/*"
+            fileList={songData.song ? [songData.song] : []}
             disabled={loading}
           >
-            <option value="">Select Genre</option>
-            {genres.map((g) => (
-              <option key={g._id} value={g._id}>
-                {g.name}
-              </option>
-            ))}
-          </select>
-        </div>
+            <Button icon={<UploadOutlined />} disabled={loading}>
+              Upload Song
+            </Button>
+          </Upload>
+        </Form.Item>
 
-        {/* SONG FILE */}
-        <div className="mb-4">
-          <label className="block text-gray-700">Song File</label>
-          <input
-            type="file"
-            name="song"
-            onChange={handleFileChange}
-            className="w-full border border-gray-300 rounded p-2"
-            accept="audio/*" // Chỉ chấp nhận file âm thanh
+        {/* Cover Image */}
+        <Form.Item label="Cover Image" name="cover">
+          <Upload
+            beforeUpload={() => false} // Prevent auto-upload
+            onChange={handleFileChange("cover")}
+            accept="image/*"
+            fileList={songData.cover ? [songData.cover] : []}
             disabled={loading}
-          />
-          {songData.song && (
-            <p className="text-sm text-gray-500 mt-1">
-              {songData.song.name}
-            </p>
-          )}
-        </div>
+          >
+            <Button icon={<UploadOutlined />} disabled={loading}>
+              Upload Cover
+            </Button>
+          </Upload>
+        </Form.Item>
 
-        {/* COVER FILE */}
-        <div className="mb-4">
-          <label className="block text-gray-700">Cover Image</label>
-          <input
-            type="file"
-            name="cover"
-            onChange={handleFileChange}
-            className="w-full border border-gray-300 rounded p-2"
-            accept="image/*" // Chỉ chấp nhận file hình ảnh
-            disabled={loading}
-          />
-          {songData.cover && (
-            <p className="text-sm text-gray-500 mt-1">
-              {songData.cover.name}
-            </p>
-          )}
-        </div>
-
-        {/* UPLOAD PROGRESS */}
+        {/* Upload Progress */}
         {loading && (
-          <div className="mb-4">
-            <label className="block text-gray-700">
-              Upload Progress
-            </label>
-            <div className="w-full bg-gray-200 rounded-full h-4">
-              <div
-                className="bg-teal-500 h-4 rounded-full"
-                style={{ width: `${uploadProgress}%` }}
-              ></div>
-            </div>
-            <p className="text-sm text-gray-600 mt-1">
-              {uploadProgress}%
-            </p>
-          </div>
+          <Form.Item label="Upload Progress">
+            <Progress percent={uploadProgress} status="active" />
+          </Form.Item>
         )}
 
-        {/* BUTTONS */}
-        <div className="flex gap-4">
-          <button
-            type="submit"
-            className="bg-teal-500 text-white px-4 py-2 rounded hover:bg-teal-600 flex items-center justify-center"
-            disabled={loading}
+        {/* Submit Button */}
+        <Form.Item>
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={loading}
+            block
+            style={{
+              backgroundColor: "#13c2c2",
+              borderColor: "#13c2c2",
+            }}
           >
-            {loading ? (
-              <span className="animate-spin border-4 border-white border-t-transparent rounded-full w-5 h-5 mr-2"></span>
-            ) : (
-              "Save"
-            )}
-            {loading && "Uploading..."}
-          </button>
-        </div>
-      </form>
+            {loading ? <Spin /> : "Save"}
+          </Button>
+        </Form.Item>
+      </Form>
     </div>
   );
 };

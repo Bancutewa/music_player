@@ -16,7 +16,7 @@ export const apiGetGenreById = (id) => axios({
     method: 'GET'
 })
 
-export const apiUpdategenre = ({ id, data }) => axios({
+export const apiUpdateGenre = ({ id, data }) => axios({
     url: `/genre/${id}`,
     method: 'PUT',
     data,

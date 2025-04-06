@@ -21,17 +21,26 @@ export const apiGetSongById = (id) => axios({
     method: 'GET'
 })
 
-export const apiUpdateSong = ({ id, data }) => axios({
+export const apiUpdateSong = ({ id, data }, config = {}) => axios({
     url: `/song/${id}`,
     method: 'PUT',
     data,
-    withCredentials: true
-})
+    withCredentials: true,
+    headers: {
+        "Content-Type": "multipart/form-data",
+    },
+    ...config,
+}
+)
 export const apiUploadSong = ({ id, data }) => axios({
     url: `/song/uploadSong/${id}`,
     method: 'PUT',
     data,
-    withCredentials: true
+    withCredentials: true,
+    headers: {
+        "Content-Type": "multipart/form-data",
+    },
+    ...config,
 })
 export const apiDeleteSong = (id) => axios({
     url: `/song/${id}`,
