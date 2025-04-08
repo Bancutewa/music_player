@@ -15,14 +15,13 @@ export default function Header() {
   }, [dispatch, isLoggedIn]);
 
   return (
-    <header className="w-full flex items-center justify-between bg-gray-900 p-4 shadow-md">
+    <header className="w-full flex items-center justify-between bg-gray-800 p-4 shadow-md">
       {/* Logo & Menu */}
       <div className="flex items-center gap-4">
         <div className="bg-teal-600 px-3 py-2 text-white font-bold text-lg flex items-center rounded-lg">
           <span className="italic">SLANT</span>
           <span className="text-xs ml-1">MUSIC</span>
         </div>
-        <Menu className="text-white cursor-pointer hover:text-teal-400 transition" />
       </div>
 
       {/* Icons & User */}

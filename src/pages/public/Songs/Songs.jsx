@@ -24,11 +24,9 @@ const Songs = () => {
   const [songs, setSongs] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearch = useDebounce(searchTerm, 500);
-  console.log("debouncedSearch", debouncedSearch);
 
-  const fetchSongs = async () => {
+  const fetchSongs = async (params = {}) => {
     try {
-      const params = {};
       if (debouncedSearch) {
         params.title = debouncedSearch;
       }
@@ -49,10 +47,31 @@ const Songs = () => {
   const fetchGenres = async () => {
     try {
       const response = await apiGetAllGenres();
-      if (response.success) setGenres(response.data);
-      else console.log(response.error);
+      if (response.success) {
+        // Thêm mục "All" vào đầu danh sách genres
+        setGenres([{ _id: "all", name: "All" }, ...response.data]);
+      } else {
+        console.log(response.error);
+      }
     } catch (error) {
       console.error("Error fetching genres:", error);
+    }
+  };
+
+  const handleGenreChange = async (id) => {
+    console.log("Genre clicked:", id);
+    try {
+      if (id === "all") {
+        // Nếu chọn "All", gọi fetchSongs mà không truyền genre
+        await fetchSongs({});
+      } else {
+        // Nếu chọn một genre cụ thể, lọc theo genre
+        const response = await apiGetAllSongs({ genre: id });
+        if (response.success) setSongs(response.data);
+        else console.log(response.error);
+      }
+    } catch (error) {
+      console.error("Error fetching songs by genre:", error);
     }
   };
 
@@ -61,7 +80,7 @@ const Songs = () => {
   }, []);
 
   useEffect(() => {
-    fetchSongs(debouncedSearch);
+    fetchSongs();
   }, [debouncedSearch]);
 
   return (
@@ -107,6 +126,7 @@ const Songs = () => {
                   {genre.name}
                 </span>
               ),
+              onClick: () => handleGenreChange(genre._id),
             }))}
             selectable={false}
             theme="light"

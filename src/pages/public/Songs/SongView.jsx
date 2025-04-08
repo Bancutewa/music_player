@@ -1,8 +1,8 @@
-import React, { memo, useEffect, useState } from "react";
+import React, { memo, useEffect, useState, useRef } from "react";
 import { apiGetAllSongs, apiGetSongById } from "../../../apis";
-import { Link, useParams, useNavigate } from "react-router-dom"; // Added useNavigate
+import { Link, useParams, useNavigate } from "react-router-dom";
 import path from "../../../utils/path";
-import { Select } from "antd";
+import { Select, message } from "antd";
 
 const SongView = () => {
   const { id } = useParams();
@@ -11,6 +11,8 @@ const SongView = () => {
   const [songs, setSongs] = useState([]);
   const [isExpanded, setIsExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
 
   const fetchSongs = async () => {
     setLoading(true);
@@ -36,6 +38,11 @@ const SongView = () => {
       const response = await apiGetSongById(songId);
       if (response.success) {
         setSong(response.data);
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          setIsPlaying(false);
+        }
       } else {
         console.error(response.error);
         setSong({});
@@ -66,18 +73,42 @@ const SongView = () => {
   };
 
   const handleSongSelect = (selectedId) => {
-    if (selectedId) {
-      navigate(`/song/${selectedId}`);
+    if (selectedId && selectedId !== id) {
+      if (isPlaying) {
+        const confirmChange = window.confirm(
+          "Audio is currently playing. Do you want to change the song?"
+        );
+        if (confirmChange) {
+          navigate(`/song/${selectedId}`);
+          if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+            setIsPlaying(false);
+          }
+        }
+      } else {
+        navigate(`/song/${selectedId}`);
+      }
     }
   };
 
+  // Handle audio play event
+  const handlePlay = () => {
+    setIsPlaying(true);
+  };
+
+  // Handle audio pause event
+  const handlePause = () => {
+    setIsPlaying(false);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b">
+    <div className="min-h-screen bg-gradient-to-b from-gray-100 to-gray-200 p-6">
       <Select
         style={{ width: "100%", marginBottom: "24px" }}
         placeholder="Select song to view"
         onChange={handleSongSelect}
-        value={id || undefined} // Show placeholder if no id
+        value={id || undefined}
         disabled={loading}
         loading={loading}
       >
@@ -148,7 +179,14 @@ const SongView = () => {
               <h3 className="text-lg font-semibold text-gray-800 mb-3">
                 Listen to the Song:
               </h3>
-              <audio controls className="w-full shadow-md">
+              <audio
+                ref={audioRef}
+                controls
+                className="w-full shadow-md"
+                key={song._id}
+                onPlay={handlePlay}
+                onPause={handlePause}
+              >
                 <source src={song.url} type="audio/mp4" />
                 Your browser does not support the audio element.
               </audio>

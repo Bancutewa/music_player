@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   FaTachometerAlt,
   FaMusic,
@@ -9,17 +9,16 @@ import {
   FaUser,
   FaCompactDisc,
   FaListUl,
-  FaChevronRight,
-  FaChevronDown,
 } from "react-icons/fa";
-import path from "../../utils/path"; // Import đường dẫn
+import { Menu, Avatar, Typography } from "antd"; // Thêm các thành phần từ antd
+import path from "../../utils/path";
+
+const { SubMenu } = Menu;
+const { Title } = Typography;
 
 const Sidebar = () => {
-  const [openMenu, setOpenMenu] = useState(null);
-
-  const toggleMenu = (menu) => {
-    setOpenMenu(openMenu === menu ? null : menu);
-  };
+  const [openMenu, setOpenMenu] = useState([]); // Sử dụng mảng để theo dõi các menu mở
+  const location = useLocation();
 
   const menuItems = [
     {
@@ -74,86 +73,99 @@ const Sidebar = () => {
     },
   ];
 
+  // Hàm kiểm tra xem đường dẫn hiện tại có khớp với path không
+  const isActive = (pathToCheck) => {
+    if (pathToCheck === "") {
+      return location.pathname === "/"; // Chỉ active Dashboard khi ở trang chính xác "/"
+    }
+    return (
+      location.pathname === `/${pathToCheck}` ||
+      location.pathname.startsWith(`/${pathToCheck.split("/:")[0]}`)
+    );
+  };
+
+  // Xử lý khi mở/đóng SubMenu
+  const handleOpenChange = (openKeys) => {
+    setOpenMenu(openKeys);
+  };
+
   return (
-    <div className="w-64 h-[100%] bg-gray-800 text-white flex flex-col items-center p-4">
+    <div className="w-64 h-full bg-gray-800 text-white flex flex-col p-4">
       {/* Profile Section */}
       <div className="flex flex-col items-center mb-6">
-        <img
+        <Avatar
+          size={64}
           src="https://randomuser.me/api/portraits/men/1.jpg"
-          alt="User"
-          className="w-16 h-16 rounded-full border-2 border-green-400"
+          className="border-2 border-green-400"
         />
-        <h3 className="mt-2 text-lg font-semibold">John Douglas</h3>
+        <Title
+          level={4}
+          style={{ color: "white", margin: "8px 0 0 0" }}
+        >
+          John Douglas
+        </Title>
         <span className="text-sm text-gray-400">Artist</span>
       </div>
 
       {/* Menu Items */}
-      <nav className="w-full">
-        <ul className="space-y-2">
-          <Link to={path.HOME}>
-            <li className="bg-gray-700 p-3 rounded flex items-center gap-3 cursor-pointer">
-              <FaTachometerAlt /> <span>Dashboard</span>
-            </li>
-          </Link>
+      <Menu
+        mode="inline"
+        theme="dark"
+        openKeys={openMenu}
+        onOpenChange={handleOpenChange}
+        selectedKeys={Object.values(path).filter(isActive)} // Chọn các menu dựa trên đường dẫn hiện tại
+        style={{ background: "transparent", border: "none" }}
+      >
+        <Menu.Item
+          key={path.HOME}
+          icon={<FaTachometerAlt />}
+          className={
+            isActive(path.HOME) ? "ant-menu-item-selected" : ""
+          }
+        >
+          <Link to={path.HOME}>Dashboard</Link>
+        </Menu.Item>
 
-          {/* Dropdown Menu */}
-          {menuItems.map((item) => (
-            <li key={item.name}>
-              {/* Header của Menu */}
-              <div
-                className="p-3 flex items-center gap-3 cursor-pointer hover:bg-gray-700 rounded justify-between"
-                onClick={() => toggleMenu(item.name)}
-              >
-                <div className="flex items-center gap-3">
-                  {item.icon} <span>{item.name}</span>
-                </div>
-                {openMenu === item.name ? (
-                  <FaChevronDown />
-                ) : (
-                  <FaChevronRight />
-                )}
-              </div>
+        {/* Dropdown Menu */}
+        {menuItems.map((item) => (
+          <SubMenu
+            key={item.name}
+            icon={item.icon}
+            title={item.name}
+            className={
+              Object.values(item.paths).some(isActive)
+                ? "ant-menu-item-selected"
+                : ""
+            }
+          >
+            <Menu.Item key={item.paths.all}>
+              <Link to={item.paths.all}>All {item.name}</Link>
+            </Menu.Item>
+            <Menu.Item key={item.paths.add}>
+              <Link to={item.paths.add}>Add {item.name}</Link>
+            </Menu.Item>
+            <Menu.Item key={item.paths.edit}>
+              <Link to={item.paths.edit}>Edit {item.name}</Link>
+            </Menu.Item>
+            <Menu.Item key={item.paths.view.replace(":id", "1")}>
+              <Link to={item.paths.view.replace(":id", "1")}>
+                View {item.name}
+              </Link>
+            </Menu.Item>
+          </SubMenu>
+        ))}
 
-              {/* Dropdown Links */}
-              {openMenu === item.name && (
-                <ul className="ml-6 space-y-1">
-                  <Link to={item.paths.all}>
-                    <li className="p-2 hover:bg-gray-700 rounded cursor-pointer">
-                      All {item.name}
-                    </li>
-                  </Link>
-                  <Link to={item.paths.add}>
-                    <li className="p-2 hover:bg-gray-700 rounded cursor-pointer">
-                      Add {item.name}
-                    </li>
-                  </Link>
-                  <Link to={item.paths.edit}>
-                    <li className="p-2 hover:bg-gray-700 rounded cursor-pointer">
-                      Edit {item.name}
-                    </li>
-                  </Link>
-                  <Link to={item.paths.view.replace(":id", "1")}>
-                    <li className="p-2 hover:bg-gray-700 rounded cursor-pointer">
-                      View {item.name}
-                    </li>
-                  </Link>
-                </ul>
-              )}
-            </li>
-          ))}
-
-          {/* Other Static Links */}
-          <li className="p-3 flex items-center gap-3 cursor-pointer hover:bg-gray-700 rounded">
-            <FaCloudUploadAlt /> <span>Upload</span>
-          </li>
-          <li className="p-3 flex items-center gap-3 cursor-pointer hover:bg-gray-700 rounded">
-            <FaChartBar /> <span>Reports</span>
-          </li>
-          <li className="p-3 flex items-center gap-3 cursor-pointer hover:bg-gray-700 rounded">
-            <FaEnvelope /> <span>Mail</span>
-          </li>
-        </ul>
-      </nav>
+        {/* Other Static Links */}
+        <Menu.Item key="upload" icon={<FaCloudUploadAlt />}>
+          <Link to="/upload">Upload</Link>
+        </Menu.Item>
+        <Menu.Item key="reports" icon={<FaChartBar />}>
+          <Link to="/reports">Reports</Link>
+        </Menu.Item>
+        <Menu.Item key="mail" icon={<FaEnvelope />}>
+          <Link to="/mail">Mail</Link>
+        </Menu.Item>
+      </Menu>
     </div>
   );
 };

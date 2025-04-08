@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Button, Card, Input, Space, Table, Typography } from "antd";
 import {
   PieChart,
   Pie,
@@ -8,76 +8,10 @@ import {
   Legend,
   Tooltip,
 } from "recharts";
+import { apiGetAllGenres } from "../../../apis/genre";
+import { SearchOutlined, PlusOutlined } from "@ant-design/icons";
 
-// Sample genres data
-const genresData = [
-  {
-    id: 1,
-    name: "Rock",
-    description:
-      'Rock music is a broad genre of popular music that originated as "rock and roll" in the United States in the late 1940s and early 1950s.',
-    albums: 12,
-    songs: 148,
-    artists: 8,
-    color: "#58bec2",
-    percentage: 28,
-  },
-  {
-    id: 2,
-    name: "Metal",
-    description:
-      "Heavy metal is a genre of rock music that developed in the late 1960s and early 1970s, largely in the United Kingdom and the United States.",
-    albums: 8,
-    songs: 96,
-    artists: 5,
-    color: "#c89385",
-    percentage: 20,
-  },
-  {
-    id: 3,
-    name: "Pop",
-    description:
-      "Pop music is a genre of popular music that originated in its modern form during the mid-1950s in the United States and the United Kingdom.",
-    albums: 10,
-    songs: 120,
-    artists: 7,
-    color: "#ca9d5a",
-    percentage: 25,
-  },
-  {
-    id: 4,
-    name: "Instrumental",
-    description:
-      "Instrumental music is music that is purely instrumental, with no vocals.",
-    albums: 5,
-    songs: 45,
-    artists: 3,
-    color: "#8da8ae",
-    percentage: 12,
-  },
-  {
-    id: 5,
-    name: "Electronic",
-    description:
-      "Electronic music is music that employs electronic musical instruments, digital instruments, or circuitry-based music technology in its creation.",
-    albums: 4,
-    songs: 38,
-    artists: 4,
-    color: "#373f45",
-    percentage: 10,
-  },
-  {
-    id: 6,
-    name: "Jazz",
-    description:
-      "Jazz is a music genre that originated in the African-American communities of New Orleans, United States, in the late 19th and early 20th centuries.",
-    albums: 2,
-    songs: 24,
-    artists: 2,
-    color: "#e2c89d",
-    percentage: 5,
-  },
-];
+const { Title } = Typography;
 
 const COLORS = [
   "#58bec2",
@@ -88,15 +22,55 @@ const COLORS = [
   "#e2c89d",
 ];
 
-const pieData = genresData.map((genre) => ({
-  name: genre.name,
-  value: genre.percentage,
-}));
-
 const Genres = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [genresData, setGenresData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Filter genres based on search term
+  const fetchGenresData = async () => {
+    try {
+      setLoading(true);
+      const response = await apiGetAllGenres();
+      if (response.success) {
+        const totalSongs = response.data.reduce(
+          (sum, genre) => sum + genre.songs.length,
+          0
+        );
+
+        const formattedData = response.data.map((genre, index) => ({
+          id: index + 1,
+          name: genre.name,
+          description:
+            genre?.description ||
+            `A genre featuring ${genre.name} music`,
+          songs: genre.songs.length,
+          artists: [
+            ...new Set(genre.songs.map((song) => song.artist.title)),
+          ], // Lấy danh sách unique artists
+          color: COLORS[index % COLORS.length],
+          percentage:
+            totalSongs > 0
+              ? Math.round((genre.songs.length / totalSongs) * 100)
+              : 0,
+        }));
+        setGenresData(formattedData);
+      }
+    } catch (error) {
+      console.error("Failed to fetch genres:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchGenresData();
+  }, []);
+
+  const pieData = genresData.map((genre) => ({
+    name: genre.name,
+    value: genre.percentage,
+  }));
+
   const filteredGenres = genresData.filter(
     (genre) =>
       genre.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -105,204 +79,132 @@ const Genres = () => {
         .includes(searchTerm.toLowerCase())
   );
 
+  if (loading) {
+    return <div>Loading genres...</div>;
+  }
+
   return (
-    <div>
-      <h1 className="text-3xl font-medium text-gray-800 mb-4">
-        Genres
-      </h1>
+    <div style={{ padding: 24 }}>
+      <Title level={2}>Genres</Title>
 
-      {/* Search and Add Genre Section */}
-      <div className="card mb-6">
-        <div className="card-body bg-white p-4">
-          <div className="flex flex-wrap gap-4">
-            <div className="flex-1 min-w-[250px]">
-              <label
-                htmlFor="search"
-                className="block text-sm font-medium text-gray-600 mb-1"
-              >
-                Search
-              </label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                  <span className="material-icons text-gray-400 text-sm">
-                    search
-                  </span>
-                </span>
-                <input
-                  id="search"
-                  type="text"
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan focus:border-transparent"
-                  placeholder="Search by genre name or description"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="w-[120px] self-end">
-              <button className="w-full bg-cyan text-white px-4 py-2 rounded-md hover:bg-opacity-90 flex items-center justify-center">
-                <span className="material-icons mr-1 text-sm">
-                  add
-                </span>
-                <span>Add Genre</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Search and Add Section */}
+      <Card style={{ marginBottom: 24 }}>
+        <Space
+          direction="horizontal"
+          style={{ width: "100%", justifyContent: "space-between" }}
+        >
+          <Input
+            prefix={<SearchOutlined />}
+            placeholder="Search by genre name or description"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ width: 300 }}
+          />
+          <Button type="primary" icon={<PlusOutlined />}>
+            Add Genre
+          </Button>
+        </Space>
+      </Card>
 
       {/* Genre Distribution Chart */}
-      <div className="card mb-6">
-        <div className="card-header">
-          <h2 className="text-lg font-medium text-gray-600">
-            GENRE DISTRIBUTION
-          </h2>
-          <div className="flex">
-            <button className="text-gray-400 mx-1">
-              <span className="material-icons">expand_more</span>
-            </button>
-            <button className="text-gray-400 mx-1">
-              <span className="material-icons">close</span>
-            </button>
-          </div>
-        </div>
-        <div className="card-body p-6">
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={80}
-                  outerRadius={120}
-                  fill="#8884d8"
-                  paddingAngle={2}
-                  dataKey="value"
-                  label={({ name, percent }) =>
-                    `${name} (${(percent * 100).toFixed(0)}%)`
-                  }
-                  labelLine={false}
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => `${value}%`} />
-                <Legend
-                  align="center"
-                  verticalAlign="bottom"
-                  layout="horizontal"
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* Genres List */}
-      <div className="card">
-        <div className="card-header">
-          <h2 className="text-lg font-medium text-gray-600">
-            ALL GENRES ({filteredGenres.length})
-          </h2>
-          <div className="flex">
-            <button className="text-gray-400 mx-1">
-              <span className="material-icons">expand_more</span>
-            </button>
-            <button className="text-gray-400 mx-1">
-              <span className="material-icons">mode_edit</span>
-            </button>
-            <button className="text-gray-400 mx-1">
-              <span className="material-icons">close</span>
-            </button>
-          </div>
-        </div>
-        <div className="card-body p-0">
-          <div className="divide-y divide-gray-100">
-            {filteredGenres.map((genre) => (
-              <div
-                key={genre.id}
-                className="flex flex-col sm:flex-row sm:items-center p-4 hover:bg-gray-50"
+      <Card title="Genre Distribution" style={{ marginBottom: 24 }}>
+        <div style={{ height: 450 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={pieData}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={120}
+                fill="#8884d8"
+                paddingAngle={2}
+                dataKey="value"
+                label={({ name, percent }) =>
+                  `${name} (${(percent * 100).toFixed(0)}%)`
+                }
+                labelLine={false}
               >
-                <div className="sm:w-1/4 mb-3 sm:mb-0">
-                  <div className="flex items-center">
-                    <div
-                      className="w-4 h-4 rounded-full mr-3"
-                      style={{ backgroundColor: genre.color }}
-                    ></div>
-                    <h3 className="font-medium">{genre.name}</h3>
-                  </div>
-                </div>
-                <div className="sm:w-2/4 mb-3 sm:mb-0">
-                  <p className="text-sm text-gray-600 line-clamp-2">
-                    {genre.description}
-                  </p>
-                </div>
-                <div className="sm:w-1/4 flex flex-col sm:flex-row sm:justify-between items-start sm:items-center">
-                  <div className="flex space-x-4 text-sm text-gray-500 mb-3 sm:mb-0">
-                    <div className="flex items-center">
-                      <span className="material-icons text-cyan text-sm mr-1">
-                        album
-                      </span>
-                      <span>{genre.albums}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="material-icons text-cyan text-sm mr-1">
-                        music_note
-                      </span>
-                      <span>{genre.songs}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="material-icons text-cyan text-sm mr-1">
-                        person
-                      </span>
-                      <span>{genre.artists}</span>
-                    </div>
-                  </div>
-                  <div className="flex space-x-2">
-                    <button className="text-gray-400 hover:text-cyan">
-                      <span className="material-icons text-sm">
-                        edit
-                      </span>
-                    </button>
-                    <button className="text-gray-400 hover:text-coral">
-                      <span className="material-icons text-sm">
-                        delete
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                {pieData.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value) => `${value}%`} />
+              <Legend
+                align="center"
+                verticalAlign="bottom"
+                layout="horizontal"
+              />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
-      </div>
-
-      {/* Pagination */}
-      <div className="flex justify-center mt-6">
-        <nav className="flex items-center space-x-2">
-          <button className="px-3 py-1 border border-gray-300 rounded-l-md hover:bg-gray-100">
-            <span className="material-icons text-gray-500">
-              chevron_left
-            </span>
-          </button>
-          <button className="px-3 py-1 bg-cyan text-white rounded-md">
-            1
-          </button>
-          <button className="px-3 py-1 border border-gray-300 hover:bg-gray-100">
-            2
-          </button>
-          <button className="px-3 py-1 border border-gray-300 rounded-r-md hover:bg-gray-100">
-            <span className="material-icons text-gray-500">
-              chevron_right
-            </span>
-          </button>
-        </nav>
-      </div>
+      </Card>
+      <Card title={`All Genres (${filteredGenres.length})`}>
+        <Table
+          dataSource={filteredGenres}
+          rowKey="id"
+          pagination={{
+            position: ["bottomCenter"],
+            pageSize: 2,
+          }}
+        >
+          <Table.Column
+            title="Name"
+            dataIndex="name"
+            key="name"
+            render={(text, record) => (
+              <Space>
+                <div
+                  style={{
+                    width: 16,
+                    height: 16,
+                    borderRadius: "50%",
+                    backgroundColor: record.color,
+                  }}
+                />
+                <span>{text}</span>
+              </Space>
+            )}
+          />
+          <Table.Column
+            title="Description"
+            dataIndex="description"
+            key="description"
+            ellipsis={true}
+          />
+          <Table.Column title="Songs" dataIndex="songs" key="songs" />
+          <Table.Column
+            title="Artists"
+            dataIndex="artists"
+            key="artists"
+            render={(artists) => artists.length}
+          />
+          <Table.Column
+            title="Action"
+            key="action"
+            render={(_, record) => (
+              <Space size="middle">
+                <Button
+                  type="link"
+                  icon={<i className="anticon anticon-edit" />}
+                >
+                  Edit
+                </Button>
+                <Button
+                  type="link"
+                  danger
+                  icon={<i className="anticon anticon-delete" />}
+                >
+                  Delete
+                </Button>
+              </Space>
+            )}
+          />
+        </Table>
+      </Card>
     </div>
   );
 };
