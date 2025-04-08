@@ -1,28 +1,60 @@
 import React, { memo, useEffect, useState } from "react";
-import { apiGetSongById } from "../../../apis";
-import { Link, useParams } from "react-router-dom";
+import { apiGetAllSongs, apiGetSongById } from "../../../apis";
+import { Link, useParams, useNavigate } from "react-router-dom"; // Added useNavigate
 import path from "../../../utils/path";
+import { Select } from "antd";
 
 const SongView = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [song, setSong] = useState({});
+  const [songs, setSongs] = useState([]);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const fetchSong = async () => {
+  const fetchSongs = async () => {
+    setLoading(true);
     try {
-      const response = await apiGetSongById(id);
+      const response = await apiGetAllSongs();
+      if (response.success) {
+        setSongs(response.data);
+      } else {
+        console.error(response.error);
+        setSongs([]);
+      }
+    } catch (error) {
+      console.error("Error fetching songs:", error);
+      setSongs([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchSong = async (songId) => {
+    setLoading(true);
+    try {
+      const response = await apiGetSongById(songId);
       if (response.success) {
         setSong(response.data);
       } else {
         console.error(response.error);
+        setSong({});
       }
     } catch (error) {
       console.error("Error fetching song:", error);
+      setSong({});
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchSong();
+    fetchSongs();
+    if (id) {
+      fetchSong(id);
+    } else {
+      setSong({});
+    }
   }, [id]);
 
   const getShortLyrics = (lyric) => {
@@ -33,9 +65,30 @@ const SongView = () => {
     return lyric;
   };
 
+  const handleSongSelect = (selectedId) => {
+    if (selectedId) {
+      navigate(`/song/${selectedId}`);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-100 to-gray-200 p-6">
-      {song.title ? (
+    <div className="min-h-screen bg-gradient-to-b">
+      <Select
+        style={{ width: "100%", marginBottom: "24px" }}
+        placeholder="Select song to view"
+        onChange={handleSongSelect}
+        value={id || undefined} // Show placeholder if no id
+        disabled={loading}
+        loading={loading}
+      >
+        {songs.map((song) => (
+          <Select.Option key={song._id} value={song._id}>
+            {song.title}
+          </Select.Option>
+        ))}
+      </Select>
+
+      {id && song.title ? (
         <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
           {/* Header */}
           <div className="bg-gray-800 text-white text-center py-4">
@@ -95,7 +148,7 @@ const SongView = () => {
               <h3 className="text-lg font-semibold text-gray-800 mb-3">
                 Listen to the Song:
               </h3>
-              <audio controls className="w-full  shadow-md">
+              <audio controls className="w-full shadow-md">
                 <source src={song.url} type="audio/mp4" />
                 Your browser does not support the audio element.
               </audio>
@@ -108,7 +161,7 @@ const SongView = () => {
               </h3>
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="mt-3 text-teal-600 hover:text-teal-800 font-medium"
+                className="mt-3 text-teal-600 hover:text-teal-800 font-medium cursor-pointer"
               >
                 {isExpanded ? "Show Less" : "Show More"}
               </button>
@@ -134,7 +187,9 @@ const SongView = () => {
         </div>
       ) : (
         <div className="text-center text-gray-600">
-          Loading song details...
+          {loading
+            ? "Loading song details..."
+            : "Please select a song from the dropdown above."}
         </div>
       )}
     </div>

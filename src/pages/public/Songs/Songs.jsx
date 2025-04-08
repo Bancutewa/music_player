@@ -3,14 +3,37 @@ import { apiGetAllSongs } from "../../../apis/song";
 import { apiGetAllGenres } from "../../../apis/genre";
 import { Link } from "react-router-dom";
 import path from "../../../utils/path";
+import {
+  Card,
+  Input,
+  Layout,
+  Menu,
+  Row,
+  Col,
+  Typography,
+} from "antd";
+import { SearchOutlined } from "@ant-design/icons";
+import useDebounce from "../../../hooks/useDebounce";
+
+const { Sider, Content } = Layout;
+const { Title } = Typography;
+const { Meta } = Card;
 
 const Songs = () => {
   const [genres, setGenres] = useState([]);
   const [songs, setSongs] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm, 500);
+  console.log("debouncedSearch", debouncedSearch);
 
   const fetchSongs = async () => {
     try {
-      const response = await apiGetAllSongs();
+      const params = {};
+      if (debouncedSearch) {
+        params.title = debouncedSearch;
+      }
+
+      const response = await apiGetAllSongs(params);
       if (response.success) {
         setSongs(response.data);
       } else {
@@ -22,67 +45,119 @@ const Songs = () => {
       setSongs([]);
     }
   };
+
   const fetchGenres = async () => {
-    const response = await apiGetAllGenres();
-    if (response.success) setGenres(response.data);
-    else console.log(response.error);
+    try {
+      const response = await apiGetAllGenres();
+      if (response.success) setGenres(response.data);
+      else console.log(response.error);
+    } catch (error) {
+      console.error("Error fetching genres:", error);
+    }
   };
 
   useEffect(() => {
-    fetchSongs();
     fetchGenres();
   }, []);
 
-  return (
-    <div className="flex h-screen">
-      {/* Sidebar */}
-      <aside className="w-64 bg-gray-100 p-4 overflow-y-auto">
-        <h2 className="text-lg font-semibold mb-4">All Genres</h2>
-        <ul>
-          {genres.map((genre, index) => (
-            <li
-              key={index}
-              className="py-1 px-2 hover:bg-gray-200 cursor-pointer"
-            >
-              {genre.name}
-            </li>
-          ))}
-        </ul>
-      </aside>
+  useEffect(() => {
+    fetchSongs(debouncedSearch);
+  }, [debouncedSearch]);
 
-      {/* Main Gallery */}
-      <main className="flex-1 p-6 overflow-y-auto">
-        <div className="grid grid-cols-4 gap-6">
-          {songs.map((song, index) => (
-            <Link
-              to={`/${path.SONGS_VIEW.replace(":id", song._id)}`}
-              key={song._id || index}
-            >
-              <div key={song._id || index} className="group">
-                {" "}
-                {/* Using _id as key */}
-                <img
-                  src={
-                    song.coverImage // Using coverImage from your data
-                      ? song.coverImage
-                      : "https://demo.tutorialzine.com/2015/03/html5-music-player/assets/img/default.png"
-                  }
-                  alt={song.title}
-                  className="w-full h-40 object-cover rounded-lg shadow-md"
-                />
-                <p className="mt-2 text-sm font-semibold">
-                  {song.title}
-                </p>
-                {/* Since your sample data doesn't include author, adding a fallback */}
-                <p className="text-xs text-gray-500">
-                  {song.artist?.title || "Unknown Artist"}
-                </p>
-              </div>
-            </Link>
-          ))}
+  return (
+    <Layout style={{ minHeight: "100vh" }}>
+      {/* Improved Sidebar */}
+      <Sider
+        width={240}
+        style={{
+          background: "#fff",
+          boxShadow: "2px 0 8px 0 rgba(0,0,0,0.05)",
+          height: "100vh",
+          overflowY: "auto",
+        }}
+      >
+        <div style={{ padding: "16px" }}>
+          <Title
+            level={4}
+            style={{
+              margin: 0,
+              padding: "8px 0",
+              color: "#1890ff",
+              borderBottom: "1px solid #f0f0f0",
+            }}
+          >
+            Music Genres
+          </Title>
+          <Menu
+            mode="vertical"
+            style={{
+              border: "none",
+              marginTop: "8px",
+            }}
+            items={genres.map((genre) => ({
+              key: genre._id,
+              label: (
+                <span
+                  style={{
+                    color: "#595959",
+                    fontSize: "14px",
+                    transition: "all 0.3s",
+                  }}
+                >
+                  {genre.name}
+                </span>
+              ),
+            }))}
+            selectable={false}
+            theme="light"
+          />
         </div>
-      </main>
-    </div>
+      </Sider>
+
+      {/* Main Content */}
+      <Content style={{ padding: "24px" }}>
+        <Row gutter={[16, 24]}>
+          <Col span={24}>
+            <Input
+              placeholder="Search songs by title..."
+              prefix={<SearchOutlined />}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ marginBottom: 16, maxWidth: 400 }}
+              size="large"
+            />
+          </Col>
+          {songs.map((song) => (
+            <Col xs={24} sm={12} md={8} lg={6} key={song._id}>
+              <Link
+                to={`/${path.SONGS_VIEW.replace(":id", song._id)}`}
+              >
+                <Card
+                  hoverable
+                  cover={
+                    <img
+                      alt={song.title}
+                      src={
+                        song.coverImage ||
+                        "https://demo.tutorialzine.com/2015/03/html5-music-player/assets/img/default.png"
+                      }
+                      style={{ height: 200, objectFit: "cover" }}
+                    />
+                  }
+                >
+                  <Meta
+                    title={song.title}
+                    description={
+                      song.artist?.title || "Unknown Artist"
+                    }
+                  />
+                </Card>
+              </Link>
+            </Col>
+          ))}
+        </Row>
+      </Content>
+    </Layout>
   );
 };
 

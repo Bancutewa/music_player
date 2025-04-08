@@ -1,5 +1,5 @@
 import React, { memo, useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom"; // Added useNavigate
 import {
   Form,
   Input,
@@ -16,6 +16,7 @@ import {
   apiUpdateSong,
   apiGetAllGenres,
   apiGetAllArtists,
+  apiGetAllSongs,
 } from "../../../apis";
 
 const { Title } = Typography;
@@ -23,6 +24,7 @@ const { TextArea } = Input;
 
 const SongEdit = () => {
   const { id } = useParams();
+  const navigate = useNavigate(); // Added for URL navigation
   const [form] = Form.useForm();
   const [songData, setSongData] = useState({
     title: "",
@@ -32,15 +34,30 @@ const SongEdit = () => {
     artist: "",
     lyrics: "",
   });
+  const [songs, setSongs] = useState([]);
   const [genres, setGenres] = useState([]);
   const [artists, setArtists] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  // Fetch song data
-  const fetchSong = async () => {
+  const fetchSongs = async () => {
     try {
-      const response = await apiGetSongById(id);
+      const response = await apiGetAllSongs();
+      if (response.success) {
+        setSongs(response.data);
+      } else {
+        console.error(response.error);
+        setSongs([]);
+      }
+    } catch (error) {
+      console.error("Error fetching songs:", error);
+      setSongs([]);
+    }
+  };
+
+  const fetchSong = async (songId) => {
+    try {
+      const response = await apiGetSongById(songId);
       if (response.success) {
         const { title, genre, url, coverImage, artist, lyrics } =
           response.data;
@@ -64,7 +81,6 @@ const SongEdit = () => {
     }
   };
 
-  // Fetch genres and artists
   const fetchGenres = async () => {
     try {
       const response = await apiGetAllGenres();
@@ -84,12 +100,17 @@ const SongEdit = () => {
   };
 
   useEffect(() => {
-    fetchSong();
+    fetchSongs();
+    fetchSong(id);
     fetchGenres();
     fetchArtists();
   }, [id]);
 
-  // Handle file upload
+  // Handle song selection change
+  const handleSongSelect = (selectedId) => {
+    navigate(`/song-edit/${selectedId}`); // Fetch new song data
+  };
+
   const handleFileChange =
     (name) =>
     ({ fileList }) => {
@@ -100,7 +121,6 @@ const SongEdit = () => {
       });
     };
 
-  // Handle form submission
   const handleSubmit = async () => {
     setLoading(true);
     setUploadProgress(0);
@@ -156,12 +176,27 @@ const SongEdit = () => {
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: "24px" }}>
+      {/* Song Selection Dropdown */}
+      <Select
+        style={{ width: "100%", marginBottom: "24px" }}
+        placeholder="Select song to edit"
+        onChange={handleSongSelect}
+        value={id}
+        disabled={loading}
+      >
+        {songs.map((song) => (
+          <Select.Option key={song._id} value={song._id}>
+            {song.title}
+          </Select.Option>
+        ))}
+      </Select>
       <Title
         level={2}
         style={{ textAlign: "center", marginBottom: "24px" }}
       >
         Edit Song
       </Title>
+
       <Form
         form={form}
         layout="vertical"
@@ -171,7 +206,6 @@ const SongEdit = () => {
           setSongData({ ...songData, ...changedValues })
         }
       >
-        {/* Title */}
         <Form.Item
           label="Title"
           name="title"
@@ -182,7 +216,6 @@ const SongEdit = () => {
           <Input placeholder="Enter song title" disabled={loading} />
         </Form.Item>
 
-        {/* Artist */}
         <Form.Item
           label="Artist"
           name="artist"
@@ -199,7 +232,6 @@ const SongEdit = () => {
           </Select>
         </Form.Item>
 
-        {/* Genres */}
         <Form.Item
           label="Genres"
           name="genre"
@@ -224,7 +256,6 @@ const SongEdit = () => {
           </Select>
         </Form.Item>
 
-        {/* Lyrics */}
         <Form.Item label="Lyrics" name="lyrics">
           <TextArea
             rows={6}
@@ -233,10 +264,9 @@ const SongEdit = () => {
           />
         </Form.Item>
 
-        {/* Song File */}
         <Form.Item label="Song File" name="song">
           <Upload
-            beforeUpload={() => false} // Prevent auto-upload
+            beforeUpload={() => false}
             onChange={handleFileChange("song")}
             accept="audio/*"
             fileList={songData.song ? [songData.song] : []}
@@ -260,10 +290,9 @@ const SongEdit = () => {
           )}
         </Form.Item>
 
-        {/* Cover Image */}
         <Form.Item label="Cover Image" name="cover">
           <Upload
-            beforeUpload={() => false} // Prevent auto-upload
+            beforeUpload={() => false}
             onChange={handleFileChange("cover")}
             accept="image/*"
             fileList={songData.cover ? [songData.cover] : []}
@@ -288,14 +317,12 @@ const SongEdit = () => {
             )}
         </Form.Item>
 
-        {/* Upload Progress */}
         {loading && (
           <Form.Item label="Upload Progress">
             <Progress percent={uploadProgress} status="active" />
           </Form.Item>
         )}
 
-        {/* Submit Button */}
         <Form.Item>
           <Button
             type="primary"

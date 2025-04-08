@@ -11,10 +11,11 @@ export const apiCreateSong = (data, config = {}) => axios({
     },
     ...config,
 });
-export const apiGetAllSongs = () => axios({
+export const apiGetAllSongs = (params) => axios({
     url: '/song',
     method: 'GET',
-})
+    params
+});
 
 export const apiGetSongById = (id) => axios({
     url: `/song/${id}`,

@@ -71,6 +71,20 @@ const SongAdd = () => {
       });
     };
 
+  // Reset form and state
+  const resetForm = () => {
+    setSongData({
+      title: "",
+      song: null,
+      cover: null,
+      genre: [],
+      artist: "",
+      lyrics: "",
+    });
+    form.resetFields();
+    setUploadProgress(0);
+  };
+
   // Handle form submission
   const handleSubmit = async () => {
     setLoading(true);
@@ -95,16 +109,7 @@ const SongAdd = () => {
       });
       if (response?.success) {
         message.success("Song created successfully!");
-        setSongData({
-          title: "",
-          song: null,
-          cover: null,
-          genre: [],
-          artist: "",
-          lyrics: "",
-        });
-        form.resetFields();
-        setUploadProgress(0);
+        alert("Song added successfully!");
       } else {
         message.error("Failed to create song.");
       }
@@ -206,7 +211,7 @@ const SongAdd = () => {
           ]}
         >
           <Upload
-            beforeUpload={() => false} // Prevent auto-upload
+            beforeUpload={() => false}
             onChange={handleFileChange("song")}
             accept="audio/*"
             fileList={songData.song ? [songData.song] : []}
@@ -221,7 +226,7 @@ const SongAdd = () => {
         {/* Cover Image */}
         <Form.Item label="Cover Image" name="cover">
           <Upload
-            beforeUpload={() => false} // Prevent auto-upload
+            beforeUpload={() => false}
             onChange={handleFileChange("cover")}
             accept="image/*"
             fileList={songData.cover ? [songData.cover] : []}
