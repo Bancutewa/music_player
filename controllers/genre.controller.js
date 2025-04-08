@@ -24,7 +24,15 @@ const getGenres = asyncHandler(async (req, res) => {
     queryString = queryString.replace(/\b(gte|gt|lt|lte)\b/g, (matchedEl) => `$${matchedEl}`);
     const queryObject = JSON.parse(queryString);
 
-    let queryCommand = Genre.find(queryObject).populate('songs', 'title').populate('songs', 'artist');
+    let queryCommand = Genre.find(queryObject)
+        .populate({
+            path: 'songs',
+            select: 'title',
+            populate: {
+                path: 'artist',
+                select: 'title',
+            },
+        });
 
     //(sort)
     if (req.query.sort) {

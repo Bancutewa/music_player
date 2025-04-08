@@ -12,7 +12,7 @@ const register = asyncHandler(async (req, res) => {
             success: false,
             message: "Missing Inputs"
         })
-    if (await User.findOne({ phone })) {
+    if (await User.findOne({ mobile })) {
         throw new Error("Phone number has existed!")
     }
     const user = await User.findOne({ email })

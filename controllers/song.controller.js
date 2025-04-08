@@ -1,4 +1,5 @@
 const Song = require("../models/song.model")
+const Genre = require("../models/genre.model")
 const asyncHandler = require("express-async-handler")
 const slugify = require('slugify')
 const cloudinary = require('cloudinary').v2;
@@ -81,26 +82,86 @@ const createAndUploadSong = asyncHandler(async (req, res) => {
 
     const slug = slugify(req.body.title, { lower: true, strict: true });
     req.body.slugify = slug;
-
     req.body.url = req.files.song[0].path;
 
     if (req.files.cover) {
         req.body.coverImage = req.files.cover[0].path;
     }
 
+    let genreIds = [];
     if (req.body.genre) {
-        const genreIds = req.body.genre.split(',').map((id) => id.trim());
+        genreIds = req.body.genre.split(",").map((id) => id.trim());
         req.body.genre = genreIds;
     }
 
     const newSong = await Song.create(req.body);
 
+    if (genreIds.length > 0) {
+        await Genre.updateMany(
+            { _id: { $in: genreIds } },
+            { $addToSet: { songs: newSong._id } }
+        );
+    }
+
     return res.status(201).json({
         success: newSong ? true : false,
-        data: newSong ? newSong : 'Cannot create and upload Song',
+        data: newSong ? newSong : "Cannot create and upload Song",
     });
 });
 
+const updateSong = asyncHandler(async (req, res) => {
+    const { sid } = req.params;
+    if (
+        Object.keys(req.body).length === 0 &&
+        (!req.files || Object.keys(req.files).length === 0)
+    ) {
+        throw new Error("Missing input");
+    }
+
+    if (req.body.title) {
+        req.body.slugify = slugify(req.body.title, { lower: true, strict: true });
+    }
+    if (req.files && req.files.song) {
+        req.body.url = req.files.song[0].path;
+    }
+    if (req.files && req.files.cover) {
+        req.body.coverImage = req.files.cover[0].path;
+    }
+
+    let newGenreIds = [];
+    if (req.body.genre) {
+        newGenreIds = req.body.genre.split(",").map((id) => id.trim());
+        req.body.genre = newGenreIds;
+    }
+
+    const oldSong = await Song.findById(sid);
+    const oldGenreIds = oldSong.genre || [];
+
+    const updatedSong = await Song.findByIdAndUpdate(sid, req.body, { new: true });
+
+
+    if (newGenreIds.length > 0 || oldGenreIds.length > 0) {
+        const genresToRemove = oldGenreIds.filter((id) => !newGenreIds.includes(id));
+        if (genresToRemove.length > 0) {
+            await Genre.updateMany(
+                { _id: { $in: genresToRemove } },
+                { $pull: { songs: sid } }
+            );
+        }
+
+        if (newGenreIds.length > 0) {
+            await Genre.updateMany(
+                { _id: { $in: newGenreIds } },
+                { $addToSet: { songs: sid } }
+            );
+        }
+    }
+
+    return res.status(200).json({
+        success: updatedSong ? true : false,
+        data: updatedSong ? updatedSong : "Cannot update Song",
+    });
+});
 
 const uploadMusic = asyncHandler(async (req, res) => {
     const { sid } = req.params;
@@ -124,31 +185,7 @@ const getSong = asyncHandler(async (req, res) => {
         data: song ? song : 'Cannot get Song'
     })
 })
-const updateSong = asyncHandler(async (req, res) => {
-    const { sid } = req.params;
-    if (Object.keys(req.body).length === 0 && (!req.files || Object.keys(req.files).length === 0)) {
-        throw new Error("Missing input");
-    }
-    if (req.body.title) {
-        req.body.slugify = slugify(req.body.title, { lower: true, strict: true });
-    }
-    if (req.files && req.files.song) {
-        req.body.url = req.files.song[0].path;
-    }
-    if (req.files && req.files.cover) {
-        req.body.coverImage = req.files.cover[0].path;
-    }
 
-    if (req.body.genre) {
-        const genreIds = req.body.genre.split(',').map((id) => id.trim());
-        req.body.genre = genreIds;
-    }
-    const updatedSong = await Song.findByIdAndUpdate(sid, req.body, { new: true });
-    return res.status(200).json({
-        success: updatedSong ? true : false,
-        data: updatedSong ? updatedSong : 'Cannot update Song',
-    });
-});
 
 const deleteSong = asyncHandler(async (req, res) => {
     const { sid } = req.params
