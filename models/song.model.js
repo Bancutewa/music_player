@@ -5,6 +5,12 @@ const songSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    description: {
+        type: String
+    },
+    lyrics: {
+        type: String
+    },
     artist: {
         type: mongoose.Types.ObjectId,
         ref: 'Artist', // Liên kết với nghệ sĩ

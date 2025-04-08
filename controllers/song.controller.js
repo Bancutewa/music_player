@@ -7,41 +7,45 @@ const cloudinary = require('cloudinary').v2;
 
 
 const getAllSongs = asyncHandler(async (req, res) => {
-    // Sao chép query từ req.query
+    // Copy query from req.query
     const queries = { ...req.query };
 
-    // Loại bỏ các trường không dùng để lọc
+    // Remove fields not used for filtering
     const excludeFields = ['limit', 'page', 'sort', 'fields'];
     excludeFields.forEach((field) => delete queries[field]);
 
-    // Chuyển đổi các toán tử so sánh (gte, gt, lt, lte) thành cú pháp MongoDB
+    // Convert comparison operators (gte, gt, lt, lte) to MongoDB syntax
     let queryString = JSON.stringify(queries);
     queryString = queryString.replace(/\b(gte|gt|lt|lte)\b/g, (matchedEl) => `$${matchedEl}`);
-    const queryObject = JSON.parse(queryString); // Parse thành object
+    let queryObject = JSON.parse(queryString);
 
-    // Tạo truy vấn cơ bản
-    let queryCommand = Song.find(queryObject);
+    if (req.query.title) {
+        queryObject.title = {
+            $regex: req.query.title,
+            $options: 'i'
+        };
+    }
 
-    // Sắp xếp (sort)
+    let queryCommand = Song.find(queryObject).populate('artist', 'title').populate('genre', 'name');;
+
+    // Sorting
     if (req.query.sort) {
         const sortBy = req.query.sort.split(',').join(' ');
         queryCommand = queryCommand.sort(sortBy);
     } else {
-        queryCommand = queryCommand.sort('-createdAt'); // Mặc định sắp xếp theo ngày tạo giảm dần
+        queryCommand = queryCommand.sort('-createdAt');
     }
 
-    // Chọn trường (fields)
+    // Field selection
     if (req.query.fields) {
         const fields = req.query.fields.split(',').map((field) => field.trim());
         queryCommand = queryCommand.select(fields);
     }
 
-    // Phân trang (pagination)
+    // Pagination
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
     const skip = (page - 1) * limit;
-
-    // Đảm bảo page và limit không âm
     if (page < 1 || limit < 1) {
         return res.status(400).json({
             success: false,
@@ -51,15 +55,15 @@ const getAllSongs = asyncHandler(async (req, res) => {
 
     queryCommand = queryCommand.skip(skip).limit(limit);
 
-    // Thực thi truy vấn
+    // Execute query
     try {
-        const songs = await queryCommand.exec(); // Thực thi truy vấn
-        const counts = await Song.countDocuments(queryObject); // Đếm tổng số document
+        const songs = await queryCommand.exec();
+        const counts = await Song.countDocuments(queryObject);
 
         res.status(200).json({
-            success: songs.length > 0, // Chỉ thành công nếu có dữ liệu
-            total: songs.length, // Số lượng bản ghi trong trang hiện tại
-            counts, // Tổng số bản ghi khớp với query
+            success: songs.length > 0,
+            total: songs.length,
+            counts,
             data: songs.length > 0 ? songs : 'No songs found',
         });
     } catch (err) {
@@ -71,7 +75,6 @@ const getAllSongs = asyncHandler(async (req, res) => {
         });
     }
 });
-
 const createAndUploadSong = asyncHandler(async (req, res) => {
     if (!req.body.title) throw new Error("Missing title");
     if (!req.files || !req.files.song) throw new Error("Missing song file");
@@ -83,6 +86,11 @@ const createAndUploadSong = asyncHandler(async (req, res) => {
 
     if (req.files.cover) {
         req.body.coverImage = req.files.cover[0].path;
+    }
+
+    if (req.body.genre) {
+        const genreIds = req.body.genre.split(',').map((id) => id.trim());
+        req.body.genre = genreIds;
     }
 
     const newSong = await Song.create(req.body);
@@ -99,6 +107,7 @@ const uploadMusic = asyncHandler(async (req, res) => {
     if (!req.file) throw new Error("Missing file");
     const song = await Song.findById(sid);
     const fileUrl = req.file.path;
+
     const response = await Song.findByIdAndUpdate(sid, { url: fileUrl }, { new: true });
 
     return res.status(200).json({
@@ -109,7 +118,7 @@ const uploadMusic = asyncHandler(async (req, res) => {
 
 const getSong = asyncHandler(async (req, res) => {
     const { sid } = req.params
-    const song = await Song.findById(sid)
+    const song = await Song.findById(sid).populate('artist', 'title').populate('genre', 'name');
     return res.status(200).json({
         success: song ? true : false,
         data: song ? song : 'Cannot get Song'
@@ -130,6 +139,10 @@ const updateSong = asyncHandler(async (req, res) => {
         req.body.coverImage = req.files.cover[0].path;
     }
 
+    if (req.body.genre) {
+        const genreIds = req.body.genre.split(',').map((id) => id.trim());
+        req.body.genre = genreIds;
+    }
     const updatedSong = await Song.findByIdAndUpdate(sid, req.body, { new: true });
     return res.status(200).json({
         success: updatedSong ? true : false,

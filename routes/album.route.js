@@ -3,13 +3,13 @@ const { uploadFiles } = require("../config/cloundinary.config")
 const albumController = require("../controllers/album.controller")
 const { verifyAccessToken, isAdmin } = require("../middlewares/verifyToken.middleware")
 
-albumRouter.post(("/"), [verifyAccessToken, isAdmin,], uploadFiles, albumController.createAndUploadAlbum)
-albumRouter.post(("/add-song/:aid"), [verifyAccessToken, isAdmin], albumController.addSongToAlbum)
-albumRouter.post(("/add-genre/:aid"), [verifyAccessToken, isAdmin], albumController.addGenreToAlbum)
+albumRouter.post(("/"), uploadFiles, albumController.createAndUploadAlbum)
+albumRouter.post(("/add-song/:aid"), albumController.addSongToAlbum)
+albumRouter.post(("/add-genre/:aid"), albumController.addGenreToAlbum)
 albumRouter.get("/", albumController.getAlbums)
-albumRouter.put("/:aid", [verifyAccessToken, isAdmin], uploadFiles, albumController.updateAlbum)
-albumRouter.delete("/:aid", [verifyAccessToken, isAdmin], albumController.deleteAlbum)
-albumRouter.get("/:aid", [verifyAccessToken, isAdmin], albumController.getAlbumById)
+albumRouter.put("/:aid", uploadFiles, albumController.updateAlbum)
+albumRouter.delete("/:aid", albumController.deleteAlbum)
+albumRouter.get("/:aid", albumController.getAlbumById)
 
 
 module.exports = albumRouter
