@@ -1,22 +1,50 @@
-const asyncHandler = require("express-async-handler")
-const slugify = require('slugify')
-const Genre = require("../models/genre.model")
-const Song = require("../models/song.model")
+const asyncHandler = require("express-async-handler");
+const slugify = require("slugify");
+const Genre = require("../models/genre.model");
+const Song = require("../models/song.model");
 
 const createGenre = asyncHandler(async (req, res) => {
-    if (Object.keys(req.body).length === 0) throw new Error("Missing input")
-    if (req.body && req.body.name) req.body.slugify = slugify(req.body.name)
-    const newGenre = await Genre.create(req.body)
+    if (!req.body.title) throw new Error("Missing title");
+
+    req.body.slugify = slugify(req.body.title, { lower: true, strict: true });
+
+    if (req.files && req.files.genre) {
+        req.body.coverImage = req.files.genre[0].path;
+    }
+
+    const newGenre = await Genre.create(req.body);
     return res.status(201).json({
         success: newGenre ? true : false,
-        data: newGenre ? newGenre : 'Cannot create Genre'
-    })
-})
+        data: newGenre ? newGenre : "Cannot create Genre",
+    });
+});
+
+const updateGenre = asyncHandler(async (req, res) => {
+    const { gid } = req.params;
+
+    if (Object.keys(req.body).length === 0 && (!req.files || Object.keys(req.files).length === 0)) {
+        throw new Error("Missing input");
+    }
+
+    if (req.body.title) {
+        req.body.slugify = slugify(req.body.title, { lower: true, strict: true });
+    }
+
+    if (req.files && req.files.genre) {
+        req.body.coverImage = req.files.genre[0].path;
+    }
+
+    const updatedGenre = await Genre.findByIdAndUpdate(gid, req.body, { new: true });
+    return res.status(200).json({
+        success: updatedGenre ? true : false,
+        data: updatedGenre ? updatedGenre : "Cannot update Genre",
+    });
+});
 
 const getGenres = asyncHandler(async (req, res) => {
     const queries = { ...req.query };
 
-    const excludeFields = ['limit', 'page', 'sort', 'fields'];
+    const excludeFields = ["limit", "page", "sort", "fields"];
     excludeFields.forEach((field) => delete queries[field]);
 
     // Chuyển đổi các toán tử so sánh (gte, gt, lt, lte) thành cú pháp MongoDB
@@ -24,38 +52,43 @@ const getGenres = asyncHandler(async (req, res) => {
     queryString = queryString.replace(/\b(gte|gt|lt|lte)\b/g, (matchedEl) => `$${matchedEl}`);
     const queryObject = JSON.parse(queryString);
 
-    let queryCommand = Genre.find(queryObject)
-        .populate({
-            path: 'songs',
-            select: 'title',
-            populate: {
-                path: 'artist',
-                select: 'title',
-            },
-        });
+    if (req.query.title) {
+        queryObject.title = {
+            $regex: req.query.title,
+            $options: "i",
+        };
+    }
+    let queryCommand = Genre.find(queryObject).populate({
+        path: "songs",
+        select: "title",
+        populate: {
+            path: "artist",
+            select: "title",
+        },
+    });
 
-    //(sort)
+    // Sorting
     if (req.query.sort) {
-        const sortBy = req.query.sort.split(',').join(' ');
+        const sortBy = req.query.sort.split(",").join(" ");
         queryCommand = queryCommand.sort(sortBy);
     } else {
-        queryCommand = queryCommand.sort('-createdAt');
+        queryCommand = queryCommand.sort("-createdAt");
     }
 
-    // (fields)
+    // Field selection
     if (req.query.fields) {
-        const fields = req.query.fields.split(',').map((field) => field.trim());
+        const fields = req.query.fields.split(",").map((field) => field.trim());
         queryCommand = queryCommand.select(fields);
     }
 
-    // (pagination)
+    // Pagination
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
     const skip = (page - 1) * limit;
     if (page < 1 || limit < 1) {
         return res.status(400).json({
             success: false,
-            message: 'Page and limit must be positive numbers',
+            message: "Page and limit must be positive numbers",
         });
     }
 
@@ -70,47 +103,46 @@ const getGenres = asyncHandler(async (req, res) => {
             success: genres.length > 0,
             total: genres.length,
             counts,
-            data: genres.length > 0 ? genres : 'No genres found',
+            data: genres.length > 0 ? genres : "No genres found",
         });
     } catch (err) {
         console.error("Genre query error:", err);
         res.status(500).json({
             success: false,
-            error: 'Internal server error',
+            error: "Internal server error",
             message: err.message,
         });
     }
 });
+
 const getGenreById = asyncHandler(async (req, res) => {
-    const { gid } = req.params
-    const genre = await Genre.findById(gid)
+    const { gid } = req.params;
+    const genre = await Genre.findById(gid);
     return res.status(200).json({
         success: genre ? true : false,
-        data: genre ? genre : 'Cannot get Genre'
-    })
-})
+        data: genre ? genre : "Cannot get Genre",
+    });
+});
 
-const updateGenre = asyncHandler(async (req, res) => {
-    const { gid } = req.params
-    if (Object.keys(req.body).length === 0) throw new Error("Missing input")
-    if (req.body && req.body.name) req.body.slugify = slugify(req.body.name)
-    const updatedGenre = await Genre.findByIdAndUpdate(gid, req.body, { new: true })
-    return res.status(200).json({
-        success: updatedGenre ? true : false,
-        data: updatedGenre ? updatedGenre : 'Cannot update Genre'
-    })
-})
 const deleteGenre = asyncHandler(async (req, res) => {
-    const { gid } = req.params
-    const deletedGenre = await Genre.findByIdAndDelete(gid)
+    const { gid } = req.params;
+    const deletedGenre = await Genre.findByIdAndDelete(gid);
     return res.status(200).json({
         success: deletedGenre ? true : false,
-        data: deletedGenre ? deletedGenre : 'Cannot delete Genre'
-    })
-})
+        data: deletedGenre ? deletedGenre : "Cannot delete Genre",
+    });
+});
+const deleteAllGenres = asyncHandler(async (req, res) => {
+    const deletedGenres = await Genre.deleteMany({});
+    return res.status(200).json({
+        success: deletedGenres ? true : false,
+        data: deletedGenres ? deletedGenres : "Cannot delete Genres",
+    });
+}
+);
 const addSongToGenre = asyncHandler(async (req, res) => {
     const { gid } = req.params;
-    const songsArray = req.body.songs?.split(',') || [];
+    const songsArray = req.body.songs?.split(",") || [];
 
     if (!songsArray.length) throw new Error("Invalid songs array");
 
@@ -131,7 +163,7 @@ const addSongToGenre = asyncHandler(async (req, res) => {
     );
     return res.status(200).json({
         success: true,
-        data: updatedGenre
+        data: updatedGenre,
     });
 });
 
@@ -141,6 +173,6 @@ module.exports = {
     getGenreById,
     updateGenre,
     deleteGenre,
-    addSongToGenre
-
-}
+    addSongToGenre,
+    deleteAllGenres
+};

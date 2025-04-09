@@ -39,6 +39,14 @@ const storage = new CloudinaryStorage({
                 folder = 'music_player/artists';
                 resource_type = 'image'; // Image file
                 break;
+            case 'playlist':
+                folder = 'music_player/playlists';
+                resource_type = 'image'; // Image file
+                break;
+            case 'genre':
+                folder = 'music_player/genres';
+                resource_type = 'image'; // Image file
+                break;
             default:
                 throw new Error('Invalid file field');
         }
@@ -58,6 +66,8 @@ const uploadFiles = multer({ storage }).fields([
     { name: 'album', maxCount: 1 },
     { name: 'artist', maxCount: 1 },
     { name: 'playlist', maxCount: 1 },
+    { name: 'genre', maxCount: 1 },
+
 ]);
 
 module.exports = { uploadFiles };
