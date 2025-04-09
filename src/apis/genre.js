@@ -1,10 +1,14 @@
 import axios from "../axios";
 
-export const apiCreateGenre = (data) => axios({
+export const apiCreateGenre = (data, config = {}) => axios({
     url: '/genre',
     method: 'POST',
     data,
-    withCredentials: true
+    withCredentials: true,
+    headers: {
+        "Content-Type": "multipart/form-data",
+    },
+    ...config,
 })
 export const apiGetAllGenres = () => axios({
     url: '/genre',
@@ -16,11 +20,15 @@ export const apiGetGenreById = (id) => axios({
     method: 'GET'
 })
 
-export const apiUpdateGenre = ({ id, data }) => axios({
+export const apiUpdateGenre = ({ id, data }, config = {}) => axios({
     url: `/genre/${id}`,
     method: 'PUT',
     data,
-    withCredentials: true
+    withCredentials: true,
+    headers: {
+        "Content-Type": "multipart/form-data",
+    },
+    ...config,
 })
 
 export const apiDeleteGenre = (id) => axios({

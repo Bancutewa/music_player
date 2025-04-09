@@ -10,23 +10,15 @@ import {
 } from "recharts";
 import { apiGetAllGenres } from "../../../apis/genre";
 import { SearchOutlined, PlusOutlined } from "@ant-design/icons";
-
+import { COLORS } from "../../../utils/constants";
+import useDebounce from "../../../hooks/useDebounce";
 const { Title } = Typography;
-
-const COLORS = [
-  "#58bec2",
-  "#c89385",
-  "#ca9d5a",
-  "#8da8ae",
-  "#373f45",
-  "#e2c89d",
-];
 
 const Genres = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [genresData, setGenresData] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const debouncedSearch = useDebounce(searchTerm, 500);
   const fetchGenresData = async () => {
     try {
       setLoading(true);
@@ -39,14 +31,12 @@ const Genres = () => {
 
         const formattedData = response.data.map((genre, index) => ({
           id: index + 1,
-          name: genre.name,
+          title: genre.title,
           description:
             genre?.description ||
-            `A genre featuring ${genre.name} music`,
+            `A genre featuring ${genre.title} music`,
           songs: genre.songs.length,
-          artists: [
-            ...new Set(genre.songs.map((song) => song.artist.title)),
-          ], // Lấy danh sách unique artists
+          artists: genre.songs.map((song) => song.artist.title),
           color: COLORS[index % COLORS.length],
           percentage:
             totalSongs > 0
@@ -67,13 +57,13 @@ const Genres = () => {
   }, []);
 
   const pieData = genresData.map((genre) => ({
-    name: genre.name,
+    title: genre.title,
     value: genre.percentage,
   }));
 
   const filteredGenres = genresData.filter(
     (genre) =>
-      genre.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      genre.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       genre.description
         .toLowerCase()
         .includes(searchTerm.toLowerCase())
@@ -86,8 +76,6 @@ const Genres = () => {
   return (
     <div style={{ padding: 24 }}>
       <Title level={2}>Genres</Title>
-
-      {/* Search and Add Section */}
       <Card style={{ marginBottom: 24 }}>
         <Space
           direction="horizontal"
@@ -95,7 +83,7 @@ const Genres = () => {
         >
           <Input
             prefix={<SearchOutlined />}
-            placeholder="Search by genre name or description"
+            placeholder="Search by genre title or description"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ width: 300 }}
@@ -120,8 +108,8 @@ const Genres = () => {
                 fill="#8884d8"
                 paddingAngle={2}
                 dataKey="value"
-                label={({ name, percent }) =>
-                  `${name} (${(percent * 100).toFixed(0)}%)`
+                label={({ title, percent }) =>
+                  `${title} (${(percent * 100).toFixed(0)}%)`
                 }
                 labelLine={false}
               >
@@ -152,9 +140,9 @@ const Genres = () => {
           }}
         >
           <Table.Column
-            title="Name"
-            dataIndex="name"
-            key="name"
+            title="Title"
+            dataIndex="title"
+            key="title"
             render={(text, record) => (
               <Space>
                 <div

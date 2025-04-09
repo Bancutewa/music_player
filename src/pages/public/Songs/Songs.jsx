@@ -48,7 +48,6 @@ const Songs = () => {
     try {
       const response = await apiGetAllGenres();
       if (response.success) {
-        // Thêm mục "All" vào đầu danh sách genres
         setGenres([{ _id: "all", name: "All" }, ...response.data]);
       } else {
         console.log(response.error);
@@ -62,10 +61,8 @@ const Songs = () => {
     console.log("Genre clicked:", id);
     try {
       if (id === "all") {
-        // Nếu chọn "All", gọi fetchSongs mà không truyền genre
         await fetchSongs({});
       } else {
-        // Nếu chọn một genre cụ thể, lọc theo genre
         const response = await apiGetAllSongs({ genre: id });
         if (response.success) setSongs(response.data);
         else console.log(response.error);
