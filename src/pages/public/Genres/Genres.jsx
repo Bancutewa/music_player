@@ -8,6 +8,8 @@ import {
   Legend,
   Tooltip,
 } from "recharts";
+import { Link } from "react-router-dom";
+import path from "../../../utils/path";
 import { apiGetAllGenres } from "../../../apis/genre";
 import { SearchOutlined, PlusOutlined } from "@ant-design/icons";
 import { COLORS } from "../../../utils/constants";
@@ -88,9 +90,11 @@ const Genres = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ width: 300 }}
           />
-          <Button type="primary" icon={<PlusOutlined />}>
-            Add Genre
-          </Button>
+          <Link to={`/${path.GENRES_ADD}`}>
+            <Button type="primary" icon={<PlusOutlined />}>
+              Add Genre
+            </Button>
+          </Link>
         </Space>
       </Card>
 

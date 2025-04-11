@@ -1,11 +1,7 @@
-import React, { memo } from 'react'
-
+import React, { memo } from "react";
+import { apiGetAllGenres } from "../../../apis/genre";
 const GenreEdit = () => {
-    return (
-        <div>
-            GenreEdit
-        </div>
-    )
-}
+  return <div>GenreEdit</div>;
+};
 
-export default memo(GenreEdit)
+export default memo(GenreEdit);

@@ -1,5 +1,5 @@
-import React, { memo, useState } from "react";
-import { apiCreateGenre } from "../../../apis"; // Import API từ file axios
+import React, { memo, useEffect, useState } from "react";
+import { apiCreateGenre, apiGetAllSongs } from "../../../apis";
 import {
   Form,
   Input,
@@ -9,6 +9,7 @@ import {
   Spin,
   Typography,
   message,
+  Select,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 
@@ -20,44 +21,75 @@ const GenreAdd = () => {
   const [genreData, setGenreData] = useState({
     title: "",
     description: "",
-    file: null, // File ảnh đại diện của genre
+    songs: [],
+    file: null,
   });
+  const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [errorMessage, setErrorMessage] = useState(null);
+  const fetchSongs = async () => {
+    try {
+      const response = await apiGetAllSongs();
+      if (response.success) {
+        setSongs(response.data);
+      } else {
+        console.error(response.error);
+        setSongs([]);
+      }
+    } catch (error) {
+      console.error("Error fetching songs:", error);
+      setSongs([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchSongs();
+  }, []);
 
   // Handle file upload
-  const handleFileChange =
-    (name) =>
-    ({ fileList }) => {
-      setGenreData({
-        ...genreData,
-        [name]:
-          fileList.length > 0 ? fileList[0].originFileObj : null,
-      });
-    };
+  const handleFileChange = ({ fileList }) => {
+    const file =
+      fileList.length > 0 ? fileList[0].originFileObj : null;
+    setGenreData({
+      ...genreData,
+      file,
+    });
+    // Cập nhật giá trị form để đồng bộ
+    form.setFieldsValue({ file });
+  };
 
   // Reset form and state
   const resetForm = () => {
     setGenreData({
       title: "",
       description: "",
+      songs: [],
       file: null,
     });
-    form.resetFields();
-    setUploadProgress(0);
+    form.resetFields(); // Reset tất cả các trường về initialValues
+    // Đảm bảo Upload component được reset
+    form.setFieldsValue({
+      title: "",
+      description: "",
+      songs: [],
+      file: null,
+    });
   };
 
   // Handle form submission
   const handleSubmit = async () => {
     setLoading(true);
     setUploadProgress(0);
-
-    const formData = new FormData();
-    formData.append("title", genreData.title);
-    formData.append("description", genreData.description);
-    if (genreData.file) formData.append("genre", genreData.file); // Sử dụng key "genre" để khớp với backend
-
+    setErrorMessage(null);
     try {
+      await form.validateFields();
+      const formData = new FormData();
+      formData.append("title", genreData.title);
+      formData.append("description", genreData.description);
+      formData.append("songs", genreData.songs.join(","));
+      if (genreData.file) formData.append("genre", genreData.file);
+
       const response = await apiCreateGenre(formData, {
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round(
@@ -66,18 +98,23 @@ const GenreAdd = () => {
           setUploadProgress(percentCompleted);
         },
       });
+
       if (response?.success) {
         message.success("Genre created successfully!");
         alert("Genre added successfully!");
-        resetForm(); // Reset form sau khi tạo thành công
+        resetForm();
       } else {
-        message.error("Failed to create genre.");
+        setErrorMessage(
+          response?.message || "Failed to create genre."
+        );
       }
     } catch (error) {
       console.error("Error creating genre:", error);
-      message.error(
-        "An error occurred while uploading. Please try again."
-      );
+      const errorMsg =
+        error.response?.data?.message ||
+        error.message ||
+        "An error occurred while uploading. Please try again.";
+      setErrorMessage(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -91,14 +128,35 @@ const GenreAdd = () => {
       >
         Add New Genre
       </Title>
+      {errorMessage && (
+        <Typography.Text
+          type="danger"
+          style={{ display: "block", marginBottom: "16px" }}
+        >
+          {errorMessage}
+        </Typography.Text>
+      )}
       <Form
         form={form}
         layout="vertical"
         onFinish={handleSubmit}
-        initialValues={genreData}
-        onValuesChange={(changedValues) =>
-          setGenreData({ ...genreData, ...changedValues })
-        }
+        initialValues={{
+          title: "",
+          description: "",
+          songs: [],
+          file: null,
+        }}
+      ></Form>
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={handleSubmit}
+        initialValues={{
+          title: "",
+          description: "",
+          songs: [],
+          file: null,
+        }}
       >
         {/* Title */}
         <Form.Item
@@ -108,7 +166,13 @@ const GenreAdd = () => {
             { required: true, message: "Please enter a title" },
           ]}
         >
-          <Input placeholder="Enter genre title" disabled={loading} />
+          <Input
+            placeholder="Enter genre title"
+            disabled={loading}
+            onChange={(e) =>
+              setGenreData({ ...genreData, title: e.target.value })
+            }
+          />
         </Form.Item>
 
         {/* Description */}
@@ -123,16 +187,58 @@ const GenreAdd = () => {
             rows={4}
             placeholder="Enter genre description"
             disabled={loading}
+            onChange={(e) =>
+              setGenreData({
+                ...genreData,
+                description: e.target.value,
+              })
+            }
           />
+        </Form.Item>
+
+        {/* Songs */}
+        <Form.Item
+          label="Song"
+          name="songs"
+          rules={[
+            { required: true, message: "Please select a song" },
+          ]}
+        >
+          <Select
+            mode="multiple"
+            placeholder="Select songs"
+            disabled={loading}
+            allowClear
+            onChange={(value) =>
+              setGenreData({ ...genreData, songs: value })
+            }
+          >
+            {songs.map((song) => (
+              <Select.Option key={song._id} value={song._id}>
+                {song.title}
+              </Select.Option>
+            ))}
+          </Select>
         </Form.Item>
 
         {/* Genre Image */}
         <Form.Item label="Genre Image" name="file">
           <Upload
-            beforeUpload={() => false} // Ngăn upload tự động, để xử lý trong handleSubmit
-            onChange={handleFileChange("file")}
+            beforeUpload={() => false} // Ngăn upload tự động
+            onChange={handleFileChange}
             accept="image/*"
-            fileList={genreData.file ? [genreData.file] : []}
+            fileList={
+              genreData.file
+                ? [
+                    {
+                      uid: "-1",
+                      name: genreData.file.name,
+                      status: "done",
+                      originFileObj: genreData.file,
+                    },
+                  ]
+                : []
+            }
             disabled={loading}
           >
             <Button icon={<UploadOutlined />} disabled={loading}>
