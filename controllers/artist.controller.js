@@ -74,8 +74,7 @@ const createAndUploadArtist = asyncHandler(async (req, res) => {
     if (!req.body.title) throw new Error("Missing title");
     if (!req.files || !req.files.artist) throw new Error("Missing artist avatar");
 
-    const slug = slugify(req.body.title, { lower: true, strict: true });
-    req.body.slugify = slug;
+    req.body.slugify = slugify(req.body.title, { lower: true, strict: true });
 
     req.body.avatar = req.files.artist[0].path;
 

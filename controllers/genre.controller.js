@@ -6,19 +6,53 @@ const Song = require("../models/song.model");
 const createGenre = asyncHandler(async (req, res) => {
     if (!req.body.title) throw new Error("Missing title");
 
-    req.body.slugify = slugify(req.body.title, { lower: true, strict: true });
+    const slug = slugify(req.body.title, { lower: true, strict: true });
+    if (!slug) throw new Error("Cannot generate a valid slug from the provided title");
+
+    const exitingGenre = await Genre.findOne({ slugify: slug });
+    if (exitingGenre) throw new Error("Genre already exists");
+
+    req.body.slugify = slug;
 
     if (req.files && req.files.genre) {
         req.body.coverImage = req.files.genre[0].path;
     }
 
-    const newGenre = await Genre.create(req.body);
+    let songsArray = [];
+    if (req.body.songs) {
+        try {
+            songsArray = req.body.songs
+                .split(",")
+                .map(id => id.trim())
+                .filter(id => id);
+
+            if (!songsArray.length) throw new Error("Invalid songs array");
+
+            const existingSongs = await Song.find({ _id: { $in: songsArray } });
+            if (existingSongs.length !== songsArray.length) {
+                throw new Error("One or more songs do not exist");
+            }
+        } catch (error) {
+            throw new Error(`Invalid songs input: ${error.message}`);
+        }
+    }
+
+    const genreData = { ...req.body, songs: songsArray };
+    const newGenre = await Genre.create(genreData);
+
+    if (songsArray.length) {
+        await Song.updateMany(
+            { _id: { $in: songsArray } },
+            { $addToSet: { genre: newGenre._id } },
+            { new: true }
+        );
+    }
+
     return res.status(201).json({
         success: newGenre ? true : false,
         data: newGenre ? newGenre : "Cannot create Genre",
     });
 });
-
 const updateGenre = asyncHandler(async (req, res) => {
     const { gid } = req.params;
 
@@ -142,10 +176,14 @@ const deleteAllGenres = asyncHandler(async (req, res) => {
 );
 const addSongToGenre = asyncHandler(async (req, res) => {
     const { gid } = req.params;
-    const songsArray = req.body.songs?.split(",") || [];
+    const songsArray = req.body.songs?.split(",").map(id => id.trim()).filter(id => id) || [];
 
     if (!songsArray.length) throw new Error("Invalid songs array");
 
+    const existingSongs = await Song.find({ _id: { $in: songsArray } });
+    if (existingSongs.length !== songsArray.length) {
+        throw new Error("One or more songs do not exist");
+    }
     // Cập nhật Genre: Thêm bài hát vào danh sách songs
     const updatedGenre = await Genre.findByIdAndUpdate(
         gid,

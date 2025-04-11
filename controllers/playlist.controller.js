@@ -77,8 +77,7 @@ const createAndUploadPlaylist = asyncHandler(async (req, res) => {
     if (!req.body.title) throw new Error("Missing title");
     if (!req.body.user) throw new Error("Missing user ID");
 
-    const slug = slugify(req.body.title, { lower: true, strict: true });
-    req.body.slugify = slug;
+    req.body.slugify = slugify(req.body.title, { lower: true, strict: true });
 
     if (req.files && req.files.cover) {
         req.body.coverImageURL = req.files.cover[0].path;

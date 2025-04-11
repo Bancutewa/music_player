@@ -80,8 +80,7 @@ const createAndUploadSong = asyncHandler(async (req, res) => {
     if (!req.body.title) throw new Error("Missing title");
     if (!req.files || !req.files.song) throw new Error("Missing song file");
 
-    const slug = slugify(req.body.title, { lower: true, strict: true });
-    req.body.slugify = slug;
+    req.body.slugify = slugify(req.body.title, { lower: true, strict: true });
     req.body.url = req.files.song[0].path;
 
     if (req.files.cover) {

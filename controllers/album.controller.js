@@ -7,8 +7,7 @@ const createAndUploadAlbum = asyncHandler(async (req, res) => {
     if (!req.body.title) throw new Error("Missing title");
     if (!req.files || !req.files.album) throw new Error("Missing album file");
 
-    const slug = slugify(req.body.title, { lower: true, strict: true });
-    req.body.slugify = slug;
+    req.body.slugify = slugify(req.body.title, { lower: true, strict: true });
 
     req.body.coverImageURL = req.files.album[0].path;
 
