@@ -7,7 +7,7 @@ const path = {
     // Genres paths
     GENRES_ALL: 'genres',
     GENRES_ADD: 'genre-add',
-    GENRES_EDIT: 'genre-edit',
+    GENRES_EDIT: 'genre-edit/:id',
     GENRES_VIEW: 'genre/:id',
 
     // Albums paths

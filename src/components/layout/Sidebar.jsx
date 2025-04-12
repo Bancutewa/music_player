@@ -144,8 +144,10 @@ const Sidebar = () => {
             <Menu.Item key={item.paths.add}>
               <Link to={item.paths.add}>Add {item.name}</Link>
             </Menu.Item>
-            <Menu.Item key={item.paths.edit}>
-              <Link to={item.paths.edit}>Edit {item.name}</Link>
+            <Menu.Item key={item.paths.edit.replace(":id", "1")}>
+              <Link to={item.paths.edit.replace(":id", "1")}>
+                Edit {item.name}
+              </Link>
             </Menu.Item>
             <Menu.Item key={item.paths.view.replace(":id", "1")}>
               <Link to={item.paths.view.replace(":id", "1")}>

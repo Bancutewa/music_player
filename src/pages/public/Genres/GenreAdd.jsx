@@ -8,10 +8,10 @@ import {
   Progress,
   Spin,
   Typography,
-  message,
   Select,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
+import Swal from "sweetalert2"; // Import SweetAlert2
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -28,18 +28,31 @@ const GenreAdd = () => {
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState(null);
+
   const fetchSongs = async () => {
     try {
+      setLoading(true);
       const response = await apiGetAllSongs();
       if (response.success) {
         setSongs(response.data);
+
+        setErrorMessage(null);
       } else {
-        console.error(response.error);
         setSongs([]);
+        setErrorMessage(response.message || "Failed to fetch songs.");
+        Swal.fire(
+          "Oops! Something went wrong",
+          response.message || "Failed to fetch songs.",
+          "error"
+        );
       }
     } catch (error) {
-      console.error("Error fetching songs:", error);
       setSongs([]);
+      const errorMsg = error.message || "Error fetching songs.";
+      setErrorMessage(errorMsg);
+      Swal.fire("Oops! Something went wrong", errorMsg, "error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -55,7 +68,6 @@ const GenreAdd = () => {
       ...genreData,
       file,
     });
-    // Cập nhật giá trị form để đồng bộ
     form.setFieldsValue({ file });
   };
 
@@ -67,8 +79,7 @@ const GenreAdd = () => {
       songs: [],
       file: null,
     });
-    form.resetFields(); // Reset tất cả các trường về initialValues
-    // Đảm bảo Upload component được reset
+    form.resetFields();
     form.setFieldsValue({
       title: "",
       description: "",
@@ -82,6 +93,8 @@ const GenreAdd = () => {
     setLoading(true);
     setUploadProgress(0);
     setErrorMessage(null);
+    console.log(genreData);
+
     try {
       await form.validateFields();
       const formData = new FormData();
@@ -100,21 +113,29 @@ const GenreAdd = () => {
       });
 
       if (response?.success) {
-        message.success("Genre created successfully!");
-        alert("Genre added successfully!");
+        Swal.fire(
+          "Success!",
+          "Genre created successfully",
+          "success"
+        );
         resetForm();
       } else {
         setErrorMessage(
           response?.message || "Failed to create genre."
         );
+        Swal.fire(
+          "Oops! Something went wrong",
+          response?.message || "Failed to create genre.",
+          "error"
+        );
       }
     } catch (error) {
-      console.error("Error creating genre:", error);
       const errorMsg =
         error.response?.data?.message ||
         error.message ||
         "An error occurred while uploading. Please try again.";
       setErrorMessage(errorMsg);
+      Swal.fire("Oops! Something went wrong", errorMsg, "error");
     } finally {
       setLoading(false);
     }
@@ -136,17 +157,6 @@ const GenreAdd = () => {
           {errorMessage}
         </Typography.Text>
       )}
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={handleSubmit}
-        initialValues={{
-          title: "",
-          description: "",
-          songs: [],
-          file: null,
-        }}
-      ></Form>
       <Form
         form={form}
         layout="vertical"
@@ -224,7 +234,7 @@ const GenreAdd = () => {
         {/* Genre Image */}
         <Form.Item label="Genre Image" name="file">
           <Upload
-            beforeUpload={() => false} // Ngăn upload tự động
+            beforeUpload={() => false}
             onChange={handleFileChange}
             accept="image/*"
             fileList={
@@ -239,7 +249,7 @@ const GenreAdd = () => {
                   ]
                 : []
             }
-            disabled={loading}
+            handicapped={loading}
           >
             <Button icon={<UploadOutlined />} disabled={loading}>
               Upload Genre Image

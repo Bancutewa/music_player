@@ -9,18 +9,19 @@ import {
   Tooltip,
 } from "recharts";
 import { Link } from "react-router-dom";
+import Swal from "sweetalert2";
 import path from "../../../utils/path";
-import { apiGetAllGenres } from "../../../apis/genre";
+import { apiDeleteGenre, apiGetAllGenres } from "../../../apis/genre";
 import { SearchOutlined, PlusOutlined } from "@ant-design/icons";
 import { COLORS } from "../../../utils/constants";
-import useDebounce from "../../../hooks/useDebounce";
 const { Title } = Typography;
 
 const Genres = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [genresData, setGenresData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const debouncedSearch = useDebounce(searchTerm, 500);
+  const [errorMessage, setErrorMessage] = useState(null);
+
   const fetchGenresData = async () => {
     try {
       setLoading(true);
@@ -32,6 +33,7 @@ const Genres = () => {
         );
 
         const formattedData = response.data.map((genre, index) => ({
+          _id: genre._id,
           id: index + 1,
           title: genre.title,
           description:
@@ -46,9 +48,19 @@ const Genres = () => {
               : 0,
         }));
         setGenresData(formattedData);
+        setErrorMessage(null);
+      } else {
+        setErrorMessage(response.message);
+        Swal.fire(
+          "Oops! Something went wrong",
+          response.message,
+          "error"
+        );
       }
     } catch (error) {
-      console.error("Failed to fetch genres:", error);
+      const errorMsg = error.message || "Failed to fetch genres.";
+      setErrorMessage(errorMsg);
+      Swal.fire("Oops! Something went wrong", errorMsg, "error");
     } finally {
       setLoading(false);
     }
@@ -71,6 +83,31 @@ const Genres = () => {
         .includes(searchTerm.toLowerCase())
   );
 
+  const handleDelete = async (id) => {
+    try {
+      const response = await apiDeleteGenre(id);
+      if (response.success) {
+        Swal.fire(
+          "Success!",
+          "Genre deleted successfully",
+          "success"
+        );
+        fetchGenresData();
+      } else {
+        setErrorMessage(response.message);
+        Swal.fire(
+          "Oops! Something went wrong",
+          response.message,
+          "error"
+        );
+      }
+    } catch (error) {
+      const errorMsg = error.message || "Failed to delete genre.";
+      setErrorMessage(errorMsg);
+      Swal.fire("Oops! Something went wrong", errorMsg, "error");
+    }
+  };
+
   if (loading) {
     return <div>Loading genres...</div>;
   }
@@ -78,6 +115,11 @@ const Genres = () => {
   return (
     <div style={{ padding: 24 }}>
       <Title level={2}>Genres</Title>
+      {errorMessage && (
+        <div style={{ color: "red", marginBottom: 16 }}>
+          {errorMessage}
+        </div>
+      )}
       <Card style={{ marginBottom: 24 }}>
         <Space
           direction="horizontal"
@@ -140,7 +182,7 @@ const Genres = () => {
           rowKey="id"
           pagination={{
             position: ["bottomCenter"],
-            pageSize: 2,
+            pageSize: 10,
           }}
         >
           <Table.Column
@@ -179,16 +221,26 @@ const Genres = () => {
             key="action"
             render={(_, record) => (
               <Space size="middle">
-                <Button
-                  type="link"
-                  icon={<i className="anticon anticon-edit" />}
+                <Link
+                  to={`/${path.GENRES_EDIT.replace(
+                    ":id",
+                    record._id
+                  )}`}
                 >
-                  Edit
-                </Button>
+                  <Button
+                    type="link"
+                    icon={<i className="anticon anticon-edit" />}
+                  >
+                    Edit
+                  </Button>
+                </Link>
                 <Button
                   type="link"
                   danger
                   icon={<i className="anticon anticon-delete" />}
+                  onClick={() => {
+                    handleDelete(record._id);
+                  }}
                 >
                   Delete
                 </Button>

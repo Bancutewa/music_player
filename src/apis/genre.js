@@ -34,6 +34,5 @@ export const apiUpdateGenre = ({ id, data }, config = {}) => axios({
 export const apiDeleteGenre = (id) => axios({
     url: `/genre/${id}`,
     method: 'DELETE',
-    data,
     withCredentials: true
 })
