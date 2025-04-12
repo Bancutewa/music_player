@@ -53,6 +53,7 @@ const createGenre = asyncHandler(async (req, res) => {
         data: newGenre ? newGenre : "Cannot create Genre",
     });
 });
+
 const updateGenre = asyncHandler(async (req, res) => {
     const { gid } = req.params;
 
@@ -60,18 +61,84 @@ const updateGenre = asyncHandler(async (req, res) => {
         throw new Error("Missing input");
     }
 
+    // Chuẩn bị dữ liệu cập nhật
+    const updateData = { ...req.body };
+
+    // Xử lý title và slugify
     if (req.body.title) {
-        req.body.slugify = slugify(req.body.title, { lower: true, strict: true });
+        updateData.slugify = slugify(req.body.title, { lower: true, strict: true });
     }
 
+    // Xử lý hình ảnh
     if (req.files && req.files.genre) {
-        req.body.coverImage = req.files.genre[0].path;
+        updateData.coverImage = req.files.genre[0].path;
     }
 
-    const updatedGenre = await Genre.findByIdAndUpdate(gid, req.body, { new: true });
+    // Xử lý songs (nếu có)
+    if (req.body.songs) {
+        const songsArray = req.body.songs.split(",").map(id => id.trim()).filter(id => id);
+        console.log("Songs Array:", songsArray);
+
+        if (!songsArray.length) {
+            throw new Error("Invalid songs array");
+        }
+
+        // Kiểm tra xem các bài hát có tồn tại không
+        const existingSongs = await Song.find({ _id: { $in: songsArray } });
+        if (existingSongs.length !== songsArray.length) {
+            throw new Error("One or more songs do not exist");
+        }
+
+        // Thêm songs vào mảng songs của Genre
+        updateData.songs = songsArray; // Thay thế toàn bộ mảng songs
+
+        // Cập nhật trường genre trong các Song
+        await Song.updateMany(
+            { _id: { $in: songsArray } },
+            { $addToSet: { genre: gid } },
+            { new: true }
+        );
+    }
+
+    // Cập nhật Genre
+    const updatedGenre = await Genre.findByIdAndUpdate(gid, updateData, { new: true });
+
     return res.status(200).json({
         success: updatedGenre ? true : false,
         data: updatedGenre ? updatedGenre : "Cannot update Genre",
+    });
+});
+
+const addSongToGenre = asyncHandler(async (req, res) => {
+    const { gid } = req.params;
+    const songsArray = req.body.songs?.split(",").map(id => id.trim()).filter(id => id) || [];
+
+    if (!songsArray.length) throw new Error("Invalid songs array");
+
+    const existingSongs = await Song.find({ _id: { $in: songsArray } });
+    if (existingSongs.length !== songsArray.length) {
+        throw new Error("One or more songs do not exist");
+    }
+
+    // Cập nhật Genre: Thêm bài hát vào danh sách songs
+    const updatedGenre = await Genre.findByIdAndUpdate(
+        gid,
+        { $push: { songs: { $each: songsArray } } },
+        { new: true }
+    );
+
+    if (!updatedGenre) throw new Error("Cannot add songs to Genre");
+
+    // Cập nhật từng Song: Gán giá trị `genre` là `gid`
+    await Song.updateMany(
+        { _id: { $in: songsArray } },
+        { $addToSet: { genre: gid } },
+        { new: true }
+    );
+
+    return res.status(200).json({
+        success: true,
+        data: updatedGenre,
     });
 });
 
@@ -174,36 +241,7 @@ const deleteAllGenres = asyncHandler(async (req, res) => {
     });
 }
 );
-const addSongToGenre = asyncHandler(async (req, res) => {
-    const { gid } = req.params;
-    const songsArray = req.body.songs?.split(",").map(id => id.trim()).filter(id => id) || [];
 
-    if (!songsArray.length) throw new Error("Invalid songs array");
-
-    const existingSongs = await Song.find({ _id: { $in: songsArray } });
-    if (existingSongs.length !== songsArray.length) {
-        throw new Error("One or more songs do not exist");
-    }
-    // Cập nhật Genre: Thêm bài hát vào danh sách songs
-    const updatedGenre = await Genre.findByIdAndUpdate(
-        gid,
-        { $push: { songs: { $each: songsArray } } },
-        { new: true }
-    );
-
-    if (!updatedGenre) throw new Error("Cannot add songs to Genre");
-
-    // Cập nhật từng Song: Gán giá trị `genre` là `gid`
-    await Song.updateMany(
-        { _id: { $in: songsArray } },
-        { $addToSet: { genre: gid } },
-        { new: true }
-    );
-    return res.status(200).json({
-        success: true,
-        data: updatedGenre,
-    });
-});
 
 module.exports = {
     createGenre,
