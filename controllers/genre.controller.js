@@ -61,20 +61,17 @@ const updateGenre = asyncHandler(async (req, res) => {
         throw new Error("Missing input");
     }
 
-    // Chuẩn bị dữ liệu cập nhật
     const updateData = { ...req.body };
 
-    // Xử lý title và slugify
     if (req.body.title) {
         updateData.slugify = slugify(req.body.title, { lower: true, strict: true });
     }
 
-    // Xử lý hình ảnh
     if (req.files && req.files.genre) {
         updateData.coverImage = req.files.genre[0].path;
     }
 
-    // Xử lý songs (nếu có)
+
     if (req.body.songs) {
         const songsArray = req.body.songs.split(",").map(id => id.trim()).filter(id => id);
         console.log("Songs Array:", songsArray);
@@ -83,16 +80,14 @@ const updateGenre = asyncHandler(async (req, res) => {
             throw new Error("Invalid songs array");
         }
 
-        // Kiểm tra xem các bài hát có tồn tại không
+
         const existingSongs = await Song.find({ _id: { $in: songsArray } });
         if (existingSongs.length !== songsArray.length) {
             throw new Error("One or more songs do not exist");
         }
 
-        // Thêm songs vào mảng songs của Genre
-        updateData.songs = songsArray; // Thay thế toàn bộ mảng songs
+        updateData.songs = songsArray;
 
-        // Cập nhật trường genre trong các Song
         await Song.updateMany(
             { _id: { $in: songsArray } },
             { $addToSet: { genre: gid } },
@@ -100,7 +95,6 @@ const updateGenre = asyncHandler(async (req, res) => {
         );
     }
 
-    // Cập nhật Genre
     const updatedGenre = await Genre.findByIdAndUpdate(gid, updateData, { new: true });
 
     return res.status(200).json({
@@ -120,7 +114,6 @@ const addSongToGenre = asyncHandler(async (req, res) => {
         throw new Error("One or more songs do not exist");
     }
 
-    // Cập nhật Genre: Thêm bài hát vào danh sách songs
     const updatedGenre = await Genre.findByIdAndUpdate(
         gid,
         { $push: { songs: { $each: songsArray } } },
@@ -129,7 +122,6 @@ const addSongToGenre = asyncHandler(async (req, res) => {
 
     if (!updatedGenre) throw new Error("Cannot add songs to Genre");
 
-    // Cập nhật từng Song: Gán giá trị `genre` là `gid`
     await Song.updateMany(
         { _id: { $in: songsArray } },
         { $addToSet: { genre: gid } },
@@ -218,7 +210,14 @@ const getGenres = asyncHandler(async (req, res) => {
 
 const getGenreById = asyncHandler(async (req, res) => {
     const { gid } = req.params;
-    const genre = await Genre.findById(gid);
+    const genre = await Genre.findById(gid).populate({
+        path: "songs",
+        select: "title",
+        populate: {
+            path: "artist",
+            select: "title",
+        },
+    });;
     return res.status(200).json({
         success: genre ? true : false,
         data: genre ? genre : "Cannot get Genre",

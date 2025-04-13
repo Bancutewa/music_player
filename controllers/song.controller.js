@@ -178,7 +178,7 @@ const uploadMusic = asyncHandler(async (req, res) => {
 
 const getSong = asyncHandler(async (req, res) => {
     const { sid } = req.params
-    const song = await Song.findById(sid).populate('artist', 'title').populate('genre', 'name');
+    const song = await Song.findById(sid).populate('artist', 'title').populate('genre', 'title');
     return res.status(200).json({
         success: song ? true : false,
         data: song ? song : 'Cannot get Song'
