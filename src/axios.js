@@ -1,8 +1,8 @@
 import axios from 'axios'
-
+require('dotenv').config();
 const instance = axios.create({
     // baseURL: process.env.REACT_APP_API_URL,
-    baseURL: 'http://localhost:8080/api/v1',
+    baseURL: `${process.env.REACT_APP_API_URL}/api/v1`,
 });
 // Add a request interceptor
 instance.interceptors.request.use(function (config) {
