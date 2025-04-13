@@ -2,7 +2,7 @@ import React, { memo, useState, useEffect } from "react";
 import { apiGetAllSongs } from "../../../apis/song";
 import { apiGetAllGenres } from "../../../apis/genre";
 import { Link } from "react-router-dom";
-import path from "../../../utils/path";
+import { admin_path } from "../../../utils/path";
 import {
   Card,
   Input,
@@ -147,7 +147,10 @@ const Songs = () => {
           {songs.map((song) => (
             <Col xs={24} sm={12} md={8} lg={6} key={song._id}>
               <Link
-                to={`/${path.SONGS_VIEW.replace(":id", song._id)}`}
+                to={`${admin_path.SONGS_VIEW.replace(
+                  ":id",
+                  song._id
+                )}`}
               >
                 <Card
                   hoverable

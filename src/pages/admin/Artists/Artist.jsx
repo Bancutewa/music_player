@@ -246,7 +246,7 @@ const Artists = () => {
                   <div className="flex flex-col">
                     <h4 className="font-medium text-base mb-1">
                       <Link
-                        to={`/artist-profile/${artist.id}`}
+                        to={`artist-profile/${artist.id}`}
                         className="hover:text-cyan"
                       >
                         {artist.name}
@@ -272,7 +272,7 @@ const Artists = () => {
                 </div>
                 <div className="flex border-t border-gray-100 bg-gray-50">
                   <Link
-                    to={`/artist-profile/${artist.id}`}
+                    to={`artist-profile/${artist.id}`}
                     className="flex-1 py-2 text-center text-xs text-gray-600 hover:bg-gray-100"
                   >
                     View Profile

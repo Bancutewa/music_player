@@ -226,7 +226,7 @@ const Albums = () => {
                   />
                   <div className="play-overlay">
                     <Link
-                      to={`/album-view/${album.id}`}
+                      to={`album-view/${album.id}`}
                       className="text-white"
                     >
                       <span className="material-icons text-5xl">
@@ -237,7 +237,7 @@ const Albums = () => {
                 </div>
                 <h4 className="font-medium text-sm mb-1 line-clamp-1">
                   <Link
-                    to={`/album-view/${album.id}`}
+                    to={`album-view/${album.id}`}
                     className="hover:text-cyan"
                   >
                     {album.title}
@@ -245,7 +245,7 @@ const Albums = () => {
                 </h4>
                 <p className="text-gray-500 text-xs">
                   <Link
-                    to={`/artist-profile/${album.id}`}
+                    to={`artist-profile/${album.id}`}
                     className="hover:text-cyan"
                   >
                     {album.artist}

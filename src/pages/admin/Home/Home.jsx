@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   LineChart,
   Line,
@@ -279,7 +278,7 @@ const Home = () => {
                 </h4>
                 <p className="text-gray-500 text-xs">
                   <Link
-                    to={`/artist-profile`}
+                    to={`artist-profile`}
                     className="hover:text-cyan"
                   >
                     {album.artist}
@@ -330,7 +329,7 @@ const Home = () => {
                 </h4>
                 <p className="text-gray-500 text-xs">
                   <Link
-                    to={`/artist-profile`}
+                    to={`artist-profile`}
                     className="hover:text-cyan"
                   >
                     {song.artist}

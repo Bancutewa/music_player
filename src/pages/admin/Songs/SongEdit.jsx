@@ -250,7 +250,7 @@ const SongEdit = () => {
           >
             {genres.map((g) => (
               <Select.Option key={g._id} value={g._id}>
-                {g.name}
+                {g.title}
               </Select.Option>
             ))}
           </Select>

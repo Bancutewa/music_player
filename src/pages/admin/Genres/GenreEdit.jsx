@@ -18,7 +18,6 @@ import {
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import Swal from "sweetalert2";
-import path from "../../../utils/path";
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -39,7 +38,7 @@ const GenreEdit = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState(null);
 
-  // Fetch all songs for the select dropdown
+  // Fetch all songs
   const fetchSongs = async () => {
     try {
       setLoading(true);
@@ -75,19 +74,22 @@ const GenreEdit = () => {
 
       if (response.success) {
         const genre = response.data;
-        console.log("genre", genre);
-
+        const songIds = Array.isArray(genre.songs)
+          ? genre.songs.map((song) =>
+              typeof song === "object" && song._id ? song._id : song
+            )
+          : [];
         if (genre) {
           const genreInfo = {
             title: genre.title,
             description: genre.description || "",
-            songs: genre.songs,
-            file: genre.image
+            songs: songIds,
+            file: genre.coverImage
               ? {
                   name: "current-image",
                   uid: "-1",
                   status: "done",
-                  url: genre.image,
+                  url: genre.coverImage,
                 }
               : null,
           };
@@ -149,35 +151,6 @@ const GenreEdit = () => {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchSongs();
-    fetchGenres();
-    if (id && id !== "1") {
-      fetchGenre();
-    } else if (id === "1") {
-      Swal.fire({
-        icon: "warning",
-        title: "Vui lòng chọn một thể loại",
-        text: "Hãy chọn một thể loại từ danh sách để chỉnh sửa.",
-      });
-      setGenreData({
-        title: "",
-        description: "",
-        songs: [],
-        file: null,
-      });
-      form.resetFields();
-    } else {
-      setGenreData({
-        title: "",
-        description: "",
-        songs: [],
-        file: null,
-      });
-      form.resetFields();
-    }
-  }, [id, form]);
 
   // Handle file upload
   const handleFileChange = ({ fileList }) => {
@@ -252,6 +225,34 @@ const GenreEdit = () => {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    fetchSongs();
+    fetchGenres();
+    if (id && id !== "1") {
+      fetchGenre();
+    } else if (id === "1") {
+      Swal.fire({
+        icon: "warning",
+        title: "Vui lòng chọn một thể loại",
+        text: "Hãy chọn một thể loại từ danh sách để chỉnh sửa.",
+      });
+      setGenreData({
+        title: "",
+        description: "",
+        songs: [],
+        file: null,
+      });
+      form.resetFields();
+    } else {
+      setGenreData({
+        title: "",
+        description: "",
+        songs: [],
+        file: null,
+      });
+      form.resetFields();
+    }
+  }, [id, form]);
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: "24px" }}>
@@ -392,6 +393,21 @@ const GenreEdit = () => {
               Upload Genre Image
             </Button>
           </Upload>
+
+          {genreData.file?.url && (
+            <div style={{ marginTop: 16 }}>
+              <img
+                src={genreData.file.url}
+                alt="Genre Cover"
+                style={{
+                  width: "100%",
+                  maxHeight: 200,
+                  objectFit: "cover",
+                  borderRadius: 8,
+                }}
+              />
+            </div>
+          )}
         </Form.Item>
 
         {/* Upload Progress */}

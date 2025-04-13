@@ -1,7 +1,7 @@
 import React, { memo, useEffect, useState, useRef } from "react";
 import { apiGetAllSongs, apiGetSongById } from "../../../apis";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import path from "../../../utils/path";
+import { admin_path } from "../../../utils/path";
 import { Select, message } from "antd";
 
 const SongView = () => {
@@ -154,7 +154,7 @@ const SongView = () => {
                     <span>
                       {song.genre?.map(
                         (el, index) =>
-                          `${el.name}${
+                          `${el.title}${
                             index === song.genre.length - 1
                               ? ""
                               : ", "
@@ -215,7 +215,10 @@ const SongView = () => {
             {/* Action Buttons */}
             <div className="mt-6 flex justify-center gap-4">
               <Link
-                to={`/${path.SONGS_EDIT.replace(":id", song._id)}`}
+                to={`${admin_path.SONGS_EDIT.replace(
+                  ":id",
+                  song._id
+                )}`}
                 className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition"
               >
                 Edit

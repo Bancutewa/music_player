@@ -3,7 +3,7 @@ import { InputField, Button } from "../../components/ui";
 import { apiLogin, apiRegister } from "../../apis/user";
 import Swal from "sweetalert2";
 import { Link, useNavigate } from "react-router-dom";
-import path from "../../utils/path";
+import { admin_path } from "../../utils/path";
 import { login } from "../../store/user/userSlice";
 import { useDispatch } from "react-redux";
 import { validate } from "../../utils/helpers";
@@ -70,7 +70,7 @@ const Login = () => {
                 })
               );
             })
-            .then(() => navigate(`/${path.HOME}`));
+            .then(() => navigate(`/${admin_path.HOME}`));
         } else {
           Swal.fire(
             "Oops! Something went wrong",
@@ -161,7 +161,7 @@ const Login = () => {
           </div>
           <Link
             className="text-blue-500 text-sm hover:underline cursor-pointer"
-            to={`/${path.HOME}`}
+            to={`${admin_path.HOME}`}
           >
             Go home?
           </Link>

@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
-import path from "../../../utils/path";
+import { admin_path } from "../../../utils/path";
 import { apiDeleteGenre, apiGetAllGenres } from "../../../apis/genre";
 import { SearchOutlined, PlusOutlined } from "@ant-design/icons";
 import { COLORS } from "../../../utils/constants";
@@ -132,7 +132,7 @@ const Genres = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ width: 300 }}
           />
-          <Link to={`/${path.GENRES_ADD}`}>
+          <Link to={`${admin_path.GENRES_ADD}`}>
             <Button type="primary" icon={<PlusOutlined />}>
               Add Genre
             </Button>
@@ -222,7 +222,7 @@ const Genres = () => {
             render={(_, record) => (
               <Space size="middle">
                 <Link
-                  to={`/${path.GENRES_EDIT.replace(
+                  to={`${admin_path.GENRES_EDIT.replace(
                     ":id",
                     record._id
                   )}`}
