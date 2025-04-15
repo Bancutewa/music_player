@@ -10,9 +10,9 @@ const app = express();
 
 const allowedOrigins = [
     'http://localhost:5173',
-    'https://music-player-xi-pink.vercel.app',
-    'https://music-player-bphzyqstr-bancutewas-projects.vercel.app',
-    'https://music-player-git-admin-site-bancutewas-projects.vercel.app'
+    'https://music-player-chi-coral.vercel.app',
+    'https://music-player-git-admin-site-bancutewas-projects.vercel.app',
+    'https://music-player-6ggfk5wrx-bancutewas-projects.vercel.app'
 ];
 
 app.use(cors({
