@@ -16,7 +16,7 @@ import { admin_path } from "../../utils/path";
 const { SubMenu } = Menu;
 const { Title } = Typography;
 
-const Sidebar = () => {
+const Sidebar = ({ isLoggedIn, current }) => {
   const location = useLocation();
 
   const menuItems = [
@@ -144,9 +144,9 @@ const Sidebar = () => {
           level={4}
           style={{ color: "white", margin: "8px 0 0 0" }}
         >
-          John Douglas
+          {current?.firstName} {current?.lastName}
         </Title>
-        <span className="text-sm text-gray-400">Artist</span>
+        <span className="text-sm text-gray-400">{current.role}</span>
       </div>
 
       <Menu

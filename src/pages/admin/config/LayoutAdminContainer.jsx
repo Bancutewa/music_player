@@ -49,7 +49,13 @@ const LayoutAdminContainer = ({
         <Header isLoggedIn={isLoggedIn} current={current} />
       )}
       <div className="flex flex-1">
-        {isSidebar && <Sidebar className="w-64" />}
+        {isSidebar && (
+          <Sidebar
+            className="w-64"
+            isLoggedIn={isLoggedIn}
+            current={current}
+          />
+        )}
         <div className="flex-1 p-4 overflow-auto">
           <ErrorBoundary>
             <Component />
