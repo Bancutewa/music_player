@@ -1,9 +1,8 @@
 import axios from 'axios'
-// require('dotenv').config();
-
+import { config } from 'dotenv';
 const instance = axios.create({
-    // baseURL: process.env.REACT_APP_API_URL,
-    baseURL: `https://music-player-ex1x.onrender.com/api/v1`,
+    baseURL: import.meta.REACT_APP_API_URL || 'http://localhost:8080/api/v1',
+    // baseURL: 'http://localhost:8080/api/v1',
 });
 // Add a request interceptor
 instance.interceptors.request.use(function (config) {

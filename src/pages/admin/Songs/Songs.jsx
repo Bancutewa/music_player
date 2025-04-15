@@ -120,7 +120,7 @@ const Songs = () => {
                     transition: "all 0.3s",
                   }}
                 >
-                  {genre.name}
+                  {genre.title}
                 </span>
               ),
               onClick: () => handleGenreChange(genre._id),

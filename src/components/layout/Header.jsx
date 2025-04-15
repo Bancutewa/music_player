@@ -5,14 +5,9 @@ import { getCurrent } from "../../store/user/asynsActions";
 import { logout } from "../../store/user/userSlice";
 import { Link } from "react-router-dom";
 
-export default function Header() {
+export default function Header({ isLoggedIn, current }) {
   const dispatch = useDispatch();
-  const { isLoggedIn, current } = useSelector((state) => state.user);
   const [showDropdown, setShowDropdown] = useState(false);
-
-  useEffect(() => {
-    if (isLoggedIn) dispatch(getCurrent());
-  }, [dispatch, isLoggedIn]);
 
   return (
     <header className="w-full flex items-center justify-between bg-gray-800 p-4 shadow-md">

@@ -62,6 +62,7 @@ const Login = () => {
             "success"
           )
             .then(() => {
+              console.log("response", response);
               dispatch(
                 login({
                   isLoggedIn: true,
@@ -70,7 +71,7 @@ const Login = () => {
                 })
               );
             })
-            .then(() => navigate(`/${admin_path.HOME}`));
+            .then(() => navigate(`${admin_path.HOME}`));
         } else {
           Swal.fire(
             "Oops! Something went wrong",

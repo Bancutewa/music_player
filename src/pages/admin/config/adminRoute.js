@@ -1,6 +1,6 @@
 
 import { admin_path } from "../../../utils/path";
-import { AlbumAdd, AlbumEdit, Albums, AlbumView, ArtistAdd, ArtistEdit, Artists, ArtistView, GenreAdd, GenreEdit, Genres, GenreView, Home, Login, PlaylistAdd, PlaylistEdit, Playlists, PlaylistView, SongAdd, SongEdit, Songs, SongView } from "../index";
+import { AlbumAdd, AlbumEdit, Albums, AlbumView, ArtistAdd, ArtistEdit, Artists, ArtistView, GenreAdd, GenreEdit, Genres, GenreView, Home, Login, PlaylistAdd, PlaylistEdit, Playlists, PlaylistView, SongAdd, SongEdit, Songs, SongView } from "../index.jsx";
 
 export const layoutAdminRoute = [
     {
