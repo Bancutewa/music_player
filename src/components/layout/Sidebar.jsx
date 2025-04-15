@@ -146,7 +146,7 @@ const Sidebar = ({ isLoggedIn, current }) => {
         >
           {current?.firstName} {current?.lastName}
         </Title>
-        <span className="text-sm text-gray-400">{current.role}</span>
+        <span className="text-sm text-gray-400">{current?.role}</span>
       </div>
 
       <Menu
